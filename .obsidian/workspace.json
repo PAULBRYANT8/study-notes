@@ -1,0 +1,225 @@
+{
+  "main": {
+    "id": "691b2b7411cd5fe8",
+    "type": "split",
+    "children": [
+      {
+        "id": "282052b00e7e49bc",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "20e0898c180f5b4c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "index.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "index"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "3e9f9ae0d6a725fe",
+    "type": "split",
+    "children": [
+      {
+        "id": "da99ff7ca48c9997",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "11d1a4e937317396",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "29872d9798de265a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "3624905adbae053e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 391.5
+  },
+  "right": {
+    "id": "e995bd9c64e4aa41",
+    "type": "split",
+    "children": [
+      {
+        "id": "0d5d85de007478aa",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "74a91940b45552f6",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "entity/colwise-parallel.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "colwise-parallel 的反向链接列表"
+            }
+          },
+          {
+            "id": "f4686f8f17047d48",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "entity/colwise-parallel.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "colwise-parallel 的出链列表"
+            }
+          },
+          {
+            "id": "a121840cf43197f0",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "62d03ee76fc4e9f9",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "0dbf3ce81375938b",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "entity/colwise-parallel.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "colwise-parallel 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "20e0898c180f5b4c",
+  "lastOpenFiles": [
+    "concepts/floating-point-error-analysis.md",
+    "concepts/deep-learning-training-numerics.md",
+    "concepts/python-advanced-mechanisms-for-pytorch.md",
+    "concepts/cpp-reading-for-pytorch-backends.md",
+    "concepts/linux-debugging-for-npu-adaptation.md",
+    "concepts/context-parallel.md",
+    "index.md",
+    "log.md",
+    "queries/npu-training-adaptation-learning-path.md",
+    "entity/colwise-parallel.md",
+    "SCHEMA.md",
+    "concepts/tensor-parallel.md",
+    "concepts/ring-attention.md",
+    "concepts/dtensor-placement.md",
+    "concepts/cp-sequence-sharding.md",
+    "comparisons/colwise-vs-rowwise-parallel.md",
+    "comparisons/tp-vs-cp-sharding.md",
+    "comparisons/README.md",
+    "comparisons/cp-load-balancers.md",
+    "comparisons/allgather-vs-alltoall-kv-rotation.md",
+    "entity/head-tail-load-balancer.md",
+    "log.md.tmp.15508.36a5c7e1d661",
+    "index.md.tmp.15508.16d302c620c9",
+    "index.md.tmp.15508.1ec41ec9e043",
+    "log.md.tmp.23708.0e3bac2585a2",
+    "index.md.tmp.23708.1786b6916080",
+    "concepts/cp-sequence-sharding.md.tmp.23708.f5f724687b74",
+    "concepts/context-parallel.md.tmp.23708.11df47e9a007",
+    "queries/how-does-pytorch-tp-shard-modules.md",
+    "queries/how-does-pytorch-tp-shard-modules.md.tmp.23708.7b593a1bdc21",
+    "comparisons/tp-vs-cp-sharding.md.tmp.23708.0cfc9769376f",
+    "comparisons/colwise-vs-rowwise-parallel.md.tmp.23708.ae374b833955",
+    "entity/micro-pipeline-tp.md",
+    "entity/loss-parallel.md",
+    "entity/prepare-module-input-output.md",
+    "entity/sequence-parallel.md"
+  ]
+}

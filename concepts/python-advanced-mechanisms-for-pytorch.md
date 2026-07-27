@@ -2,7 +2,7 @@
 title: PyTorch 适配所需的 Python 进阶机制
 type: concept
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [python, pytorch, 装饰器, 上下文管理器, torch-function, c-extension]
 sources:
   - https://docs.python.org/3/glossary.html#term-decorator
@@ -12,6 +12,7 @@ sources:
   - https://docs.python.org/3/c-api/intro.html
   - https://docs.pytorch.org/docs/stable/notes/extending.html
   - https://docs.pytorch.org/docs/stable/torch.overrides.html
+  - https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html
   - https://docs.pytorch.org/tutorials/advanced/cpp_custom_ops.html
 ---
 
@@ -376,6 +377,55 @@ with ExitStack() as stack:
 | `__torch_function__` | 公共 Python `torch` API | Tensor-like 类型与高层 API override |
 | `__torch_dispatch__` | dispatcher 的 Python 覆盖层 | 更底层地观察/改写 ATen 运算 |
 | dispatcher registration | C++/operator registry | 把 schema + dispatch key 映射到 kernel |
+
+### `nn.Module` 的 forward pre-hook 与 forward hook
+
+`model(x)` 先进入 `nn.Module.__call__`，再经过前向 hook 和 `forward`；直接写 `model.forward(x)` 会绕过这层包装。可将调用链简化为：
+
+```text
+args/kwargs
+  → forward_pre_hooks （观察或修改输入）
+  → forward(*args, **kwargs)
+  → forward_hooks （观察或修改输出）
+  → 返回 output
+```
+
+| hook | 默认签名 | 执行时机 | 返回非 `None` 时 |
+|---|---|---|---|
+| `register_forward_pre_hook` | `hook(module, args)` | `forward` 之前 | 用返回值作为新输入 |
+| `register_forward_hook` | `hook(module, args, output)` | `forward` 之后 | 用返回值替换输出 |
+
+pre-hook 返回新输入后，`forward` 会收到新值；forward hook 返回新输出后，调用者会收到新值。两者返回 `None` 都表示只观察。需要关键字参数时使用 `with_kwargs=True`，此时 pre-hook 应返回 `(new_args, new_kwargs)`。完整参数约定参见 [PyTorch Module hooks 文档](https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html)。
+
+```python
+def add_one_before(module, args):
+    (x,) = args
+    return (x + 1,)
+
+
+def clamp_after(module, args, output):
+    return output.clamp(max=5)
+
+
+handle_pre = module.register_forward_pre_hook(add_one_before)
+handle_post = module.register_forward_hook(clamp_after)
+```
+
+它们的主要价值是把横切逻辑插到模块边界，而不必改写 `forward`：
+
+- 记录输入/输出的 shape、dtype、device 和数值范围，定位 `NaN` 或维度错误。
+- 收集中间 activation 做可视化、特征分析或知识蒸馏。
+- 在计算前做输入适配，在计算后做输出替换或限制。
+- 用前后两个 hook 记录单个模块的执行耗时。
+
+几个边界条件：
+
+- forward hook 执行时 `forward` 已经结束，修改它收到的输入不会影响本次计算；要改输入用 pre-hook。
+- 仅保存 activation 时通常保存 `output.detach()`，否则可能把计算图一并保留而造成显存增长。
+- 尽量避免在 hook 中原地改 Tensor；要改结果时返回新 Tensor。
+- `register_*` 返回的 handle 用完后调用 `handle.remove()`，否则重复注册会重复执行。
+- 多个 hook 默认按注册顺序执行；`prepend=True` 可将当前 hook 放到同类已有 hook 前面。`always_call=True` 可让 forward hook 在 `forward` 抛异常时也执行，适合清理和诊断。
+- `register_full_backward_hook` 是反向传播阶段的另一类 hook，发生在 `.backward()` 期间，不在上面的前向调用链中。
 
 不要把它们混为一谈。一个模块 forward hook 看不到所有函数式调用；`__torch_function__` 也不是设备 kernel 注册。
 

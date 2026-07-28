@@ -15,3 +15,4 @@
 - 2026-07-26 回补 CP 笔记到 TP 的交叉链接 —— [[context-parallel]]、[[cp-sequence-sharding]]、[[how-does-pytorch-cp-shard-sequences]]
 - 2026-07-26 写入 NPU 训练适配方向的学习路线，并把其中提到的 9 个未写主题登记进待写 —— [[npu-training-adaptation-learning-path]]、[[index]]
 - 2026-07-26 补全 NPU 训练适配的五项前置基础，并回链学习路线 —— [[linux-debugging-for-npu-adaptation]]、[[cpp-reading-for-pytorch-backends]]、[[python-advanced-mechanisms-for-pytorch]]、[[deep-learning-training-numerics]]、[[floating-point-error-analysis]]、[[npu-training-adaptation-learning-path]]、[[index]]、[[log]]
+- 2026-07-27 扩展 Python callable、`__call__` 调用协议、典型作用及 PyTorch Module 调用链说明 —— [[python-advanced-mechanisms-for-pytorch]]、[[log]]

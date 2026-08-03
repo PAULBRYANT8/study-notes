@@ -4,7 +4,7 @@ type: entity
 created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, 损失函数, 显存]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 `loss_parallel()` 是个 context manager，让 cross entropy 在 **logits 按词表维分片**的状态下直接计算，不必先 all_gather 成完整 logits。

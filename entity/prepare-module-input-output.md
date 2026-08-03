@@ -4,7 +4,7 @@ type: entity
 created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, 布局, hook]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 这三个 `ParallelStyle` **不切任何参数**，只在模块边界处把张量转成 DTensor 并调整布局。用于把 [[colwise-parallel]] / [[rowwise-parallel]] / [[sequence-parallel]] 拼接起来的地方。

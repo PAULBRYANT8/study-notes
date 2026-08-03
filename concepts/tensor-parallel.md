@@ -4,7 +4,7 @@ type: concept
 created: 2026-07-26
 updated: 2026-07-27
 tags: [pytorch, 分布式, dtensor, 张量并行]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 Tensor Parallel（张量并行，TP）把**单个算子的权重矩阵**切开分到多卡，每卡算一部分再通过集合通信拼回来。切的是模型参数，不是数据。

@@ -4,7 +4,7 @@ type: concept
 created: 2026-07-25
 updated: 2026-07-25
 tags: [pytorch, context-parallel, 分片, dtensor]
-sources: [[[2026-07-25-pytorch-cp-source]]]
+sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
 
 CP 的切分是**「先重排、后等分」**两步：先按负载均衡策略把序列位置打乱成 rank-major 顺序，再用 `torch.chunk` 语义切成 world_size 段，第 r 段给 rank r。

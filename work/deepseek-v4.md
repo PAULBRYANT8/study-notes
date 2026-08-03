@@ -4,7 +4,7 @@
 
 ## 问题索引
 
-- [[#^q001-router|Q001：Router 为每个 token 选择若干专家，并产生 routed score。这其中的Router指的是什么，请详细说明一下]]
+- [[#^q001-router|Q001：Router 为每个 token 选择若干专家，并产生 routed score。这其中的 Router 指的是什么，请详细说明一下]]
 - [[#^q002-shared-routed-experts|Q002：为什么要拆分成共享专家和路由专家？两条 FFN 路径分别起什么作用？]]
 - [[#^q003-experts-zero-compile-config|Q003：使用 experts[0] 统一代表全局专家编译配置是否合理？]]
 - [[#^q004-profile-routed-shared-experts|Q004：路由专家和共享专家在采集的 profiling 上怎么区分？它们有什么区别？]]
@@ -14,7 +14,9 @@
 - 记录日期：2026-07-31
 - 主题：MoE、Router、routed score、Top-K、共享专家与路由专家
 
-> **原问题：** Router 为每个 token 选择若干专家，并产生 routed score。这其中的Router指的是什么，请详细说明一下 ^q001-router
+> **原问题：** Router 为每个 token 选择若干专家，并产生 routed score。这其中的Router指的是什么，请详细说明一下
+>
+> ^q001-router
 
 ### 回答
 
@@ -35,13 +37,13 @@ Router 通常会在每一个 MoE 层重新执行。某个 token 在不同层的�
 
 #### 2. Router 的输入和输出
 
-设第 \(l\) 层中，第 \(t\) 个 token 经过注意力模块后得到隐藏向量：
+设第 $l$ 层中，第 $t$ 个 token 经过注意力模块后得到隐藏向量：
 
-\[
+$$
 u_t^{(l)} \in \mathbb{R}^{d}
-\]
+$$
 
-这里的 \(u_t^{(l)}\) 已经包含上下文信息，而不只是 token 的字面含义。例如，同一个 `bank` 在 `river bank` 和 `bank account` 中会产生不同的隐藏向量，因此可以被 Router 分配给不同专家。
+这里的 $u_t^{(l)}$ 已经包含上下文信息，而不只是 token 的字面含义。例如，同一个 `bank` 在 `river bank` 和 `bank account` 中会产生不同的隐藏向量，因此可以被 Router 分配给不同专家。
 
 Router 主要产生以下信息：
 
@@ -53,49 +55,49 @@ Router 主要产生以下信息：
 | Gate weights | 被选中专家在输出合并时使用的权重 |
 | Dispatch metadata | token 如何复制、重排并发送给对应专家的信息 |
 
-在很多实现中，Router 可以视为一个从隐藏维度 \(d\) 映射到路由专家数量 \(N\) 的线性层：
+在很多实现中，Router 可以视为一个从隐藏维度 $d$ 映射到路由专家数量 $N$ 的线性层：
 
-\[
+$$
 z_t = W_{router}u_t
-\]
+$$
 
 其中：
 
-\[
+$$
 W_{router} \in \mathbb{R}^{N \times d}
-\]
+$$
 
-输出 \(z_t\) 中的第 \(i\) 个值就是 token 对路由专家 \(i\) 的原始匹配值。
+输出 $z_t$ 中的第 $i$ 个值就是 token 对路由专家 $i$ 的原始匹配值。
 
 #### 3. 从隐藏向量到 Top-K 专家的计算过程
 
 DeepSeekMoE 一类常见路由机制可以写成以下形式。先计算 token 和每个专家路由向量之间的匹配值：
 
-\[
+$$
 z_{i,t} = \left(u_t^{(l)}\right)^T e_i^{(l)}
-\]
+$$
 
-其中 \(e_i^{(l)}\) 是当前层中专家 \(i\) 对应的可学习路由向量。然后在专家维度执行 Softmax：
+其中 $e_i^{(l)}$ 是当前层中专家 $i$ 对应的可学习路由向量。然后在专家维度执行 Softmax：
 
-\[
+$$
 s_{i,t} = \operatorname{Softmax}_i(z_{i,t})
-\]
+$$
 
-Router 从所有 \(s_{i,t}\) 中选择最大的 K 个。稀疏门控权重为：
+Router 从所有 $s_{i,t}$ 中选择最大的 K 个。稀疏门控权重为：
 
-\[
+$$
 g_{i,t} =
 \begin{cases}
 s_{i,t}, & i \in \operatorname{TopK}(s_{1,t},\ldots,s_{N,t}) \\
 0, & \text{其他专家}
 \end{cases}
-\]
+$$
 
 路由专家的加权输出可以抽象为：
 
-\[
+$$
 y_t = \sum_{i=1}^{N}g_{i,t}\operatorname{Expert}_i(u_t)
-\]
+$$
 
 所以 Router 实际完成了两件事：
 
@@ -108,9 +110,9 @@ y_t = \sum_{i=1}^{N}g_{i,t}\operatorname{Expert}_i(u_t)
 
 假设当前层有 4 个路由专家，某个 token 的归一化 routing scores 为：
 
-\[
+$$
 [0.58,\ 0.13,\ 0.03,\ 0.26]
-\]
+$$
 
 采用 Top-2 路由时，Router 会选择：
 
@@ -119,9 +121,9 @@ y_t = \sum_{i=1}^{N}g_{i,t}\operatorname{Expert}_i(u_t)
 
 专家 2 和专家 3 不为这个 token 执行 FFN。抽象的合并结果为：
 
-\[
+$$
 y_t = 0.58E_1(u_t)+0.26E_4(u_t)
-\]
+$$
 
 如果实现要求对 Top-2 分数重新归一化，则会先将 0.58 和 0.26 除以二者之和，再作为最终 gate weights。
 
@@ -162,11 +164,11 @@ h = h * routed_scores.to(h.dtype)
 - 不是专家的 `w1`、`w2` 或 `w3` 参数；
 - 会随 token、上下文和 MoE 层发生变化。
 
-之所以可以把 score scaling 放在第二次线性变换之前，是因为对每个 routed row 的标量 \(s\) 而言：
+之所以可以把 score scaling 放在第二次线性变换之前，是因为对每个 routed row 的标量 $s$ 而言：
 
-\[
+$$
 W_2(s h)=s(W_2h)
-\]
+$$
 
 因此在没有其他破坏线性的操作时，先缩放激活再执行 `w2`，与在 `w2` 后缩放该专家输出是数学等价的。
 
@@ -254,34 +256,75 @@ MoE 训练通常增加专家级或设备级负载均衡约束，鼓励 Router �
 
 ### 相关笔记
 
-- [[swiglu-group-接入复盘#1.3 路由专家与共享专家|路由专家与共享专家]]
-- [[swiglu-group-接入复盘#4.1 两次 GMM 之间的融合点|两次 GMM 之间的融合点]]
-- [[swiglu-group-接入复盘#A.3 weight 为什么是 routed score|weight 为什么是 routed score]]
+- [[swiglu-group-接入复盘#2. 背景：融合的到底是哪一段|路由专家与共享专家]]
+- [[swiglu-group-接入复盘#3.2 npu_gmm：为路由专家提供 activation 注入点|两次 GMM 之间的融合点]]
+- [[swiglu-group-接入复盘#4.1 Python 入口|weight 为什么是 routed score]]
 
 [[#问题索引|返回问题索引]]
 
 ## Q003：使用 `experts[0]` 统一代表全局专家编译配置是否合理
 
-- 记录日期：2026-08-03
-- 主题：DeepSeek-V4、NpuGroupedExperts、torch.compile、激活函数共享、编译配置
+- 记录日期：2026-08-04
+- 主题：DeepSeek-V4、NpuGroupedExperts、torch.compile、hash routing、激活函数共享、编译配置
 
-> **原问题：** 对于deepseek-v4模型，使用experts[0]统一代表全局专家编译配置是否合理？ ^q003-experts-zero-compile-config
+> **原问题：** 对于deepseek-v4模型，使用experts[0]统一代表全局专家编译配置是否合理？
+>
+> ^q003-experts-zero-compile-config
 
 ### 回答
 
 #### 1. 结论
 
-在当前 DeepSeek-V4 专用训练路径中，**从 `experts[0]` 取出激活函数，编译一次后共享给所有 `NpuGroupedExperts`，是合理的优化**；但把它表述为“用 `experts[0]` 代表全局专家编译配置”并不准确，而且当前实现缺少对关键前提的显式检查。
+这条评审意见并不是说“代码已经确定编译错了”，而是在质疑一个没有被代码显式保证的前提：
 
-更准确的说法是：
+> 所有 `NpuGroupedExperts` 是否真的都使用同一种 activation？如果不是，为什么可以拿 `experts[0]` 代表全部层？
 
-> `experts[0]` 只是“所有同构路由专家容器的代表模块”，用于提供待编译的激活函数；真正的全局编译配置由 `backend` 和 `dynamic_tokens` 等显式参数提供。
+当前 DeepSeek-V4 的前三层虽然使用 hash routing，但差异发生在“Router 怎么选专家”，不是“专家内部怎么执行 SwiGLU”。因此，**当前支持配置下共享一份 activation 编译结果是合理的**。
 
-因此判断是：**现有 DeepSeek-V4 路径下可用，但作为通用实现还不够稳健。**
+不过，当前代码没有检查“所有 activation 相同”这个前提。如果未来部分层使用原生 activation、部分层使用 `SwigluGroup`，代码就可能拿第一层的实现静默覆盖其他层。因此，这条评审属于合理的健壮性和可维护性意见。
 
-#### 2. `experts[0]` 到底代表什么
+#### 2. 先区分 MoE 层中的 Router 和 Experts
 
-当前代码先遍历模型：
+一层 MoE 可以先简化成两部分：
+
+```text
+MoE 层
+├─ Router：决定每个 token 送给哪些专家
+└─ Experts：对已经分发过来的 token 执行 FFN
+```
+
+完整数据流大致是：
+
+```text
+输入 token
+  -> Router 选择专家
+  -> dispatch/reorder
+  -> GMM-1
+  -> SwiGLU activation
+  -> GMM-2
+  -> combine
+```
+
+`compile_expert_activation()` 只编译中间这一小段：
+
+```text
+SwiGLU activation
+```
+
+它不编译：
+
+- Router；
+- hash routing table；
+- token dispatch/reorder；
+- GMM-1/GMM-2；
+- expert 权重；
+- 完整的 MoE 层。
+
+这正是理解“前三层是 hash expert，为什么还可能共享编译结果”的关键。
+
+#### 3. `experts[0]` 不是第 0 号专家
+
+当前代码先遍历传入的模型对象：
 
 ```python
 experts = [
@@ -291,13 +334,46 @@ experts = [
 ]
 ```
 
-这里的 `experts` 并不是一个 MoE 层内部的“专家 0、专家 1、专家 2”。列表中的每个元素都是一个 `NpuGroupedExperts` **容器模块**，通常对应一个 MoE 层中的整组本地路由专家；单个容器内部的 `w13` 和 `w2` 才打包了多个专家的参数。
+这里的 `experts` 并不是某一层中的：
 
-所以 `experts[0]` 表示的是模型遍历顺序中的第一个路由专家容器，而不是 Router 选择的第 0 号专家。将变量改名为 `expert_modules` 会更清楚。
+```text
+expert 0、expert 1、expert 2……
+```
 
-#### 3. 哪些信息来自全局配置，哪些信息来自 `experts[0]`
+列表中的每个元素是一个 `NpuGroupedExperts` 容器，通常对应一个 MoE 层中的整组本地路由专家。例如一个 6 层模型可能得到：
 
-当前调用关系可以概括为：
+```text
+experts[0] = 第 0 层的 NpuGroupedExperts 容器
+experts[1] = 第 1 层的 NpuGroupedExperts 容器
+experts[2] = 第 2 层的 NpuGroupedExperts 容器
+experts[3] = 第 3 层的 NpuGroupedExperts 容器
+experts[4] = 第 4 层的 NpuGroupedExperts 容器
+experts[5] = 第 5 层的 NpuGroupedExperts 容器
+```
+
+每个容器内部的 `w13` 和 `w2` 才打包了这一层中的多个具体专家参数。
+
+另外，“全局”在这里也不是跨所有机器、所有 PP stage 的真正全局；函数只处理传入的当前 `model` 对象，所以更准确地说，是在当前进程、当前模型分片可见的所有 `NpuGroupedExperts` 中共享。
+
+#### 4. 当前代码如何使用 `experts[0]`
+
+核心逻辑相当于：
+
+```python
+activation_fn = experts[0]._expert_activation_fn
+compiled_activation = torch.compile(activation_fn)
+
+for expert_module in experts:
+    expert_module._expert_activation_fn = compiled_activation
+```
+
+也就是：
+
+1. 从第一个路由专家容器取得 activation；
+2. 只编译这一份；
+3. 把编译结果写回全部路由专家容器。
+
+调用关系可以画成：
 
 ```text
 compile_config.backend ───────────────┐
@@ -311,90 +387,301 @@ experts[0]._expert_activation_fn ─────┘   待编译函数
                               写回全部 NpuGroupedExperts
 ```
 
-- `backend` 来自模型级 `compile_config`；
-- `dynamic_tokens` 由是否启用 Expert Parallel 决定；
-- `experts[0]` 只提供 `_expert_activation_fn`；
-- 编译结果随后被写入所有路由专家容器。
+因此，`experts[0]` 并没有代表完整的“全局编译配置”。
 
-所以，`experts[0]` 并没有统一代表完整的全局编译配置，它只代表“应当编译哪一种激活实现”。
+- `backend` 来自模型 compile 配置；
+- `dynamic_tokens` 来自是否启用 Expert Parallel；
+- `experts[0]` 只负责提供“要编译哪个 activation 函数”。
 
-#### 4. 为什么当前路径可以共享同一个编译函数
+#### 5. hash 层与普通层到底哪里不一样
 
-路由专家的主要数据流是：
+假设一层有 4 个路由专家。
 
-```text
-x ─► grouped_mm(w13_i) ─► h
-                         │
-                         ▼
-          共享的 compiled activation
-        (h, swiglu_limit, routed_scores)
-                         │
-                         ▼
-                grouped_mm(w2_i) ─► out
-```
-
-编译的只是中间激活桥接函数，而不是整个专家模块：
-
-- 每层不同的 `w13_i`、`w2_i` 位于编译函数之外，没有被闭包捕获；
-- `h`、`swiglu_limit` 和 `routed_scores` 都在调用时传入；
-- `npu_swiglu_group` 转换器会遍历全部 `NpuGroupedExperts`，为它们统一设置同一个 `swiglu_group_activation`；
-- 未启用该转换器时，各容器默认也使用同一个原生 `_expert_activation`。
-
-因此，在所有容器使用同一种激活实现的前提下，重复编译每一层只会增加编译时间和缓存占用，复用同一个编译入口更合适。
-
-需要注意：调用一次 `torch.compile` 只表示共享同一个编译包装器，并不绝对保证运行期间只有一个底层图或二进制。如果隐藏维度、可选参数或静态值不同，编译器仍可能产生不同的特化版本；当前代码主要把 token 数所在的第 0 维标记为动态维度。
-
-#### 5. 当前实现的风险
-
-当前代码隐含了以下不变量：
+普通 top-k Router 会根据当前 token 的隐藏向量计算分数：
 
 ```text
-所有 NpuGroupedExperts 的原始 activation_fn 完全相同
+token A 的专家分数：
+
+expert 0 = 0.1
+expert 1 = 0.7
+expert 2 = 0.3
+expert 3 = 0.9
 ```
 
-但 `compile_expert_activation()` 没有验证它。若以后出现不同激活实现混用，代码会：
+如果选择 top-2：
 
-1. 只编译模型遍历得到的第一个模块的函数；
-2. 把这个函数覆盖到其他所有模块；
-3. 静默改变原本应使用另一种激活的模块语义。
+```text
+token A -> expert 3、expert 1
+```
 
-这样一来，模型模块的遍历顺序会意外影响计算结果。
+hash Router 则根据 `input_ids` 查询 `tid2eid` 表：
 
-另外还有两个边界问题：
+```text
+token_id = 123
+tid2eid[123] = [expert 0, expert 2]
 
-- 当前 `compile_key` 只有 `(backend, dynamic_tokens)`，没有记录激活实现的种类；
-- 如果在同一个模型对象上更换编译配置，`experts[0]` 中保存的可能已经是旧的编译包装器，存在再次编译包装器而不是原始函数的风险。
+token A -> expert 0、expert 2
+```
 
-现有单元测试验证了“两个容器原始激活相同，编译一次并共享”的正常路径，但没有覆盖激活函数混用的情况。
+两种路由的差别是：
 
-#### 6. 推荐的实现边界
+```text
+普通层：根据 router score 的 top-k 选择专家
+hash 层：根据 token ID 查表选择专家
+```
 
-如果该函数只服务于当前同构的 DeepSeek-V4 路径，可以继续采用“编译一次、全部共享”的设计，但应至少增加显式校验：
+但选择完成以后，专家内部仍可以执行完全相同的计算：
 
-1. 将原始激活函数或稳定的 `activation_kind` 单独保存；
-2. 编译前确认所有容器的 `activation_kind` 一致，不一致就立即报错；
-3. 将编译键扩展为 `(activation_kind, backend, dynamic_tokens)`；
-4. 始终从未编译的原始函数创建编译包装器，避免重复包装。
+```text
+hash Router ─────┐
+                 ├─► routed_input/scores/counts
+普通 top-k Router ┘           │
+                              ▼
+                  相同的 NpuGroupedExperts
+                              │
+                              ▼
+                   GMM-1 -> activation -> GMM-2
+```
 
-如果未来允许不同层选择不同激活，则不应再由 `experts[0]` 统一代表，而应按下面的键分组，每组只编译一次：
+所以“前三层 Router 是 hash 模式”并不能直接推出“前三层 expert activation 不同”。
+
+#### 6. 一个当前安全的四层例子
+
+假设 DeepSeek-V4 有 4 层，前三层是 hash routing：
+
+| 层 | Router 类型 | `_expert_activation_fn` |
+|---|---|---|
+| 第 0 层 | hash | `_expert_activation` |
+| 第 1 层 | hash | `_expert_activation` |
+| 第 2 层 | hash | `_expert_activation` |
+| 第 3 层 | top-k | `_expert_activation` |
+
+虽然 Router 类型不同，但四层 activation 是同一个 Python 函数 `F`：
+
+```text
+第 0 层：F
+第 1 层：F
+第 2 层：F
+第 3 层：F
+```
+
+这时没有必要执行四次：
+
+```text
+compile(F)
+compile(F)
+compile(F)
+compile(F)
+```
+
+可以只编译一次：
+
+```text
+第 0 层 ─┐
+第 1 层 ─┤
+第 2 层 ─┼─► compiled(F)
+第 3 层 ─┘
+```
+
+这就是当前使用 `experts[0]` 的优化目的：第一个容器只是提供大家共同使用的函数 `F`。
+
+#### 7. 为什么每层输入不同仍然可以共享函数
+
+不同层传给 activation 的数据当然不同：
+
+```text
+第 0 层：h0、limit0、scores0
+第 3 层：h3、limit3、scores3
+```
+
+但 activation 的程序结构相同：
+
+```python
+def activation(h, swiglu_limit, routed_scores):
+    ...
+```
+
+这些数据是在调用时传入的运行时参数，不是被写死在函数中的层级状态。类似于：
+
+```python
+def add(a, b):
+    return a + b
+```
+
+`add(1, 2)` 和 `add(100, 200)` 的输入值不同，但不需要定义两个不同的 `add` 函数。
+
+同样，hash 层和普通层的 routed rows、routed score 数值不同，不代表必须使用不同的 activation 程序。
+
+需要注意：只调用一次 `torch.compile` 表示共享同一个编译包装器，不绝对保证底层永远只有一个图。如果输入 shape、可选参数或静态值触发不同 guard，编译器仍可能生成不同的特化版本。EP 场景下，当前 wrapper 会把 token 数所在的第 0 维标记为动态维度。
+
+#### 8. A5 `SwigluGroup` 路径为什么也能共享
+
+没有启用 `npu_swiglu_group` 时，所有 `NpuGroupedExperts` 默认使用：
+
+```text
+_expert_activation
+```
+
+A5 启用 `npu_swiglu_group` 后，converter 会遍历全部路由专家容器：
+
+```python
+for module in experts:
+    module.set_expert_activation(swiglu_group_activation)
+```
+
+因此会变成：
+
+| 层 | Router 类型 | `_expert_activation_fn` |
+|---|---|---|
+| 第 0 层 | hash | `swiglu_group_activation` |
+| 第 1 层 | hash | `swiglu_group_activation` |
+| 第 2 层 | hash | `swiglu_group_activation` |
+| 第 3 层 | top-k | `swiglu_group_activation` |
+
+当前 converter 不会产生“部分层 native、部分层 fused”的混合状态，所以从 `experts[0]` 取得 fused activation 后共享，在当前支持配置下也是合理的。
+
+#### 9. 一个真正会出错的例子
+
+假设未来支持按层选择 activation：
+
+| 层 | 原本配置的 activation |
+|---|---|
+| 第 0 层 | `_expert_activation` |
+| 第 1 层 | `_expert_activation` |
+| 第 2 层 | `_expert_activation` |
+| 第 3 层 | `swiglu_group_activation` |
+
+这时：
+
+```python
+experts[0]._expert_activation_fn
+```
+
+取到的是 `_expert_activation`。当前代码会编译 native 实现，然后写回所有层：
+
+```text
+compiled_native = compile(_expert_activation)
+
+第 0 层 -> compiled_native
+第 1 层 -> compiled_native
+第 2 层 -> compiled_native
+第 3 层 -> compiled_native  # 错误
+```
+
+最终结果是：
+
+| 层 | 原本应该使用 | 最终实际使用 |
+|---|---|---|
+| 第 0 层 | native | native |
+| 第 1 层 | native | native |
+| 第 2 层 | native | native |
+| 第 3 层 | SwigluGroup | native，配置被静默覆盖 |
+
+此时模型遍历顺序甚至会影响最终语义：如果 fused 层刚好排在 `experts[0]`，就可能反过来把所有 native 层覆盖成 fused。
+
+这才是评审意见真正担心的问题。
+
+#### 10. 当前代码缺少的显式保证
+
+当前实现依赖这个不变量：
+
+```text
+所有 NpuGroupedExperts 的 activation 函数完全相同
+```
+
+但代码没有验证它，而且 `compile_key` 只有：
+
+```python
+(backend, dynamic_tokens)
+```
+
+没有包含 activation identity 或稳定的 `activation_kind`。
+
+现有单元测试验证的是：
+
+```text
+两个容器都使用 F
+  -> F 只编译一次
+  -> 两个容器共享 compiled(F)
+```
+
+尚未覆盖：
+
+```text
+一个容器使用 F，另一个使用 G
+  -> 应明确报错或分组编译
+```
+
+因此当前没有明确的 hash-layer 正确性 bug，但存在一个没有被代码表达出来的全局同质性假设。
+
+#### 11. 为什么评审要求和 `panchao-gitcode` 确认
+
+原来的 `compile_expert_activation()` 就采用“编译一份 activation，再分发给所有路由专家容器”的设计。当时待编译函数固定为 `_expert_activation`，不存在 native/fused 选择，所以全局同质性是天然成立的。
+
+接入 `SwigluGroup` 后，待编译函数可能是：
+
+```text
+_expert_activation
+或者
+swiglu_group_activation
+```
+
+代码因此改为从 `experts[0]` 取得当前选择的函数。评审者是在确认：
+
+> 原来“全模型共享一份 activation compile”的设计，在引入多个 activation 实现以后是否仍然成立？前三层 hash routing 是否会破坏这个前提？
+
+从当前代码看，hash routing 不会破坏它；但最好由原设计者确认意图，并把不变量写进代码或测试，而不是只依赖大家对模型结构的理解。
+
+#### 12. 推荐的处理方式
+
+如果当前只支持“全模型统一 native”或“全模型统一 SwigluGroup”，最小修正是在编译前检查函数一致性：
+
+```python
+activation_fn = getattr(
+    experts[0],
+    _EXPERT_ACTIVATION_FN_ATTR,
+)
+
+if any(
+    getattr(module, _EXPERT_ACTIVATION_FN_ATTR) is not activation_fn
+    for module in experts[1:]
+):
+    raise ValueError(
+        "All NpuGroupedExperts must use the same "
+        "activation before shared compilation."
+    )
+```
+
+这样：
+
+```text
+F、F、F、F -> 校验通过 -> 编译一次并共享
+F、F、F、G -> 校验失败 -> 明确报错，不静默覆盖
+```
+
+同时应增加“不同 activation 明确报错”的单元测试。
+
+如果未来确实需要不同层选择不同 activation，则不能继续简单使用 `experts[0]`，而应按下面的键分组，每组编译一次：
 
 ```text
 (activation_kind, backend, dynamic_tokens)
 ```
 
-#### 7. 最终判断
+#### 13. 最终判断
 
-| 判断对象 | 是否合理 |
+| 判断对象 | 结论 |
 |---|---|
-| 所有层同构时，共享一次激活编译结果 | 合理 |
-| 用 `experts[0]` 取得同构模块的代表激活函数 | 有显式不变量检查时合理 |
-| 把 `experts[0]` 当作完整的全局编译配置 | 不准确 |
-| 未验证激活一致性就覆盖全部模块 | 不够稳健 |
-| 将来存在多种激活实现时仍只看 `experts[0]` | 不合理，应按激活类型分组编译 |
+| 前三层 hash Router 与后续 top-k Router 不同 | 是，但差异在路由选择，不在 expert activation |
+| 当前所有路由专家共享 native activation | 合理 |
+| A5 下所有路由专家共享 `swiglu_group_activation` | 合理 |
+| `experts[0]` 代表完整的全局编译配置 | 不准确，它只提供待编译 activation |
+| 当前 hash 层会直接导致编译结果错误 | 没有代码证据支持 |
+| 不校验 activation 一致性就覆盖全部模块 | 不够稳健 |
+| 未来支持混合 activation 时仍只看 `experts[0]` | 不合理，应显式拒绝或分组编译 |
 
 一句话概括：
 
-> 可以全局共享的是“无层级状态、语义相同的激活计算图”，不是 `experts[0]` 这个模块本身；`experts[0]` 只有在“所有专家容器同构”被明确保证时，才适合作为代表。
+> 当前可以共享的是“所有层共同使用、且不捕获层级状态的 activation 程序”，不是 `experts[0]` 这个模块本身。前三层的 hash 差异发生在 Router，所以当前共享合理；但代码应该显式验证所有 activation 相同，避免未来混合配置被第一层静默覆盖。
 
 ### 相关问题
 
@@ -408,7 +695,9 @@ x ─► grouped_mm(w13_i) ─► h
 - 记录日期：2026-07-31
 - 主题：MoE、共享专家、路由专家、参数分工、稀疏计算
 
-> **问题（精简）：** 为什么要拆分成共享专家和路由专家？共享专家已经计算了 `w1/w2/w3`，路由专家还要对选中的 token 计算 `w13/w2`，这两条路径分别起什么作用？ ^q002-shared-routed-experts
+> **问题（精简）：** 为什么要拆分成共享专家和路由专家？共享专家已经计算了 `w1/w2/w3`，路由专家还要对选中的 token 计算 `w13/w2`，这两条路径分别起什么作用？
+>
+> ^q002-shared-routed-experts
 
 ### 回答
 
@@ -416,13 +705,13 @@ x ─► grouped_mm(w13_i) ─► h
 
 共享专家和路由专家不是重复计算同一套参数，而是两组参数独立、输出相加的 FFN 分支：
 
-\[
+$$
 y(x)=F_{shared}(x)+\sum_{i\in\operatorname{TopK}(x)}g_i(x)F_i(x)
-\]
+$$
 
 - 共享专家提供所有 token 都需要的公共底座；
 - 路由专家根据 token 和上下文提供专门化增量；
-- Router 产生的 \(g_i(x)\) 决定各路由专家对当前 token 的贡献。
+- Router 产生的 $g_i(x)$ 决定各路由专家对当前 token 的贡献。
 
 因此整体思想是：
 
@@ -432,29 +721,29 @@ y(x)=F_{shared}(x)+\sum_{i\in\operatorname{TopK}(x)}g_i(x)F_i(x)
 
 共享专家计算的是自己的参数：
 
-\[
+$$
 F_{shared}(x)=W_{2,s}\left(\operatorname{SiLU}(xW_{1,s})\odot xW_{3,s}\right)
-\]
+$$
 
 路由专家计算的是另一套独立参数：
 
-\[
+$$
 F_i(x)=W_{2,i}\left(\operatorname{SiLU}(xW_{1,i})\odot xW_{3,i}\right)
-\]
+$$
 
 即使两条路径都有完整的 SwiGLU FFN，也有：
 
-\[
+$$
 W_{1,s}\neq W_{1,i},\qquad W_{2,s}\neq W_{2,i},\qquad W_{3,s}\neq W_{3,i}
-\]
+$$
 
 相同的算子结构不代表相同的知识。共享专家只完成了一套公共参数的变换，并没有执行所有路由专家学习到的专业能力。
 
 路由路径中的 `w13` 通常只是：
 
-\[
+$$
 W_{13}=\operatorname{concat}(W_1,W_3)
-\]
+$$
 
 它将 `w1` 和 `w3` 合并成一次 GMM，再切分为 gate 和 up 两部分。这是参数布局和算子融合方式，不是与共享专家不同的神经网络原理。
 
@@ -498,9 +787,9 @@ token hidden states ─────┤                                      ├�
 
 共享专家不是免费的，它对所有 token 都产生固定计算量：
 
-\[
+$$
 \text{激活计算量}=\text{共享专家计算量}+\text{Top-K 路由专家计算量}
-\]
+$$
 
 为了控制总计算量，实际模型通常需要在共享专家数量、专家宽度和路由 Top-K 之间重新分配预算。共享专家过多会增加固定成本，并可能让模型过度依赖共享路径；共享专家过少，则公共知识仍会在路由专家中重复出现。因此两类专家的比例需要通过实验确定。
 
@@ -519,7 +808,9 @@ token hidden states ─────┤                                      ├�
 - 记录日期：2026-08-03
 - 主题：DeepSeek-V4、profiling、路由专家、共享专家、GMM、SwigluGroup、Expert Parallel
 
-> **原问题：** 路由专家和共享专家在采集的profiling上怎么区分呢？它们有什么区别？ ^q004-profile-routed-shared-experts
+> **原问题：** 路由专家和共享专家在采集的profiling上怎么区分呢？它们有什么区别？
+>
+> ^q004-profile-routed-shared-experts
 
 ### 回答
 

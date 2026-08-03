@@ -4,7 +4,7 @@ type: concept
 created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, dtensor, 模块]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 TP 的切分是**声明式**的：用 `parallelize_module(module, mesh, plan)` 把 `ParallelStyle` 按模块 FQN 贴上去，每个 style 负责三件事——切参数、改输入布局、改输出布局。

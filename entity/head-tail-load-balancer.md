@@ -4,7 +4,7 @@ type: entity
 created: 2026-07-25
 updated: 2026-07-25
 tags: [pytorch, context-parallel, 负载均衡]
-sources: [[[2026-07-25-pytorch-cp-source]]]
+sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
 
 `_HeadTailLoadBalancer` 是 PyTorch CP 的默认负载均衡策略：把序列切成 `2 * world_size` 个等长块，让每个 rank 各拿一个靠前的块和一个对称靠后的块。

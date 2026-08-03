@@ -2,7 +2,7 @@
 title: 深度学习训练中的反向传播、混合精度与显存账本
 type: concept
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-08-04
 tags: [深度学习, 数值, 反向传播, 混合精度, fp16, bf16, loss-scale, 优化器, 显存]
 sources:
   - https://docs.pytorch.org/docs/stable/notes/autograd.html
@@ -25,34 +25,34 @@ sources:
 
 若：
 
-\[
+$$
 y=f(x),\quad L=g(y)
-\]
+$$
 
 则：
 
-\[
+$$
 \frac{\partial L}{\partial x}
 =
 \frac{\partial L}{\partial y}
 \frac{\partial y}{\partial x}
-\]
+$$
 
 反向传播从 loss 开始，把上游梯度乘以当前局部导数，再传给输入。
 
 例：
 
-\[
+$$
 y=x^2,\quad L=3y
-\]
+$$
 
 则：
 
-\[
+$$
 \frac{\partial L}{\partial y}=3,\quad
 \frac{\partial y}{\partial x}=2x,\quad
 \frac{\partial L}{\partial x}=6x
-\]
+$$
 
 PyTorch 的 `Tensor.backward()` 按链式法则对图求导；见 [`torch.Tensor.backward`](https://docs.pytorch.org/docs/stable/generated/torch.Tensor.backward.html)。
 
@@ -72,19 +72,19 @@ PyTorch 是 reverse-mode automatic differentiation 系统，forward 同时记录
 
 上例中 `y` 被使用两次：
 
-\[
+$$
 z=y+y
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{\partial L}{\partial y}
 =
 \left.\frac{\partial L}{\partial y}\right|_{\text{第一条边}}
 +
 \left.\frac{\partial L}{\partial y}\right|_{\text{第二条边}}
-\]
+$$
 
 这解释了：
 
@@ -96,11 +96,11 @@ z=y+y
 
 ### 4. 向量场景是 VJP，不是显式构造完整 Jacobian
 
-若 \(y=f(x)\) 是向量，反向接收上游向量 \(v=\partial L/\partial y\)，计算：
+若 $y=f(x)$ 是向量，反向接收上游向量 $v=\partial L/\partial y$，计算：
 
-\[
+$$
 v^\mathsf{T}J_f
-\]
+$$
 
 即 vector-Jacobian product（VJP）。框架通常不显式构造巨大 Jacobian，而是每个算子的 backward 实现局部 VJP。
 
@@ -116,33 +116,33 @@ y.backward(gradient=v)
 
 前向：
 
-\[
+$$
 z = xW^\mathsf{T} + b,\quad
 h = \mathrm{ReLU}(z),\quad
 L = \ell(h)
-\]
+$$
 
 反向：
 
-\[
+$$
 g_h = \frac{\partial L}{\partial h}
-\]
+$$
 
-\[
+$$
 g_z = g_h \odot \mathbf{1}(z>0)
-\]
+$$
 
-\[
+$$
 \frac{\partial L}{\partial x}=g_zW
-\]
+$$
 
-\[
+$$
 \frac{\partial L}{\partial W}=g_z^\mathsf{T}x
-\]
+$$
 
-\[
+$$
 \frac{\partial L}{\partial b}=\operatorname{sum}_{batch}(g_z)
-\]
+$$
 
 这里至少涉及：
 
@@ -192,13 +192,13 @@ autograd 可能保存某 tensor 供 backward 使用。若之后原地修改，�
 
 深层网络的梯度包含多个局部 Jacobian 的乘积：
 
-\[
+$$
 \frac{\partial L}{\partial x_0}
 =
 \frac{\partial L}{\partial x_n}
 \prod_{i=1}^{n}
 \frac{\partial x_i}{\partial x_{i-1}}
-\]
+$$
 
 若乘数的典型尺度长期小于 1，梯度趋向消失；大于 1，趋向爆炸。实际网络是矩阵乘积，其谱性质、归一化、残差、初始化和激活共同决定传播。
 
@@ -218,15 +218,15 @@ autograd 可能保存某 tensor 供 backward 使用。若之后原地修改，�
 
 例如：
 
-\[
+$$
 \log\sum_i e^{x_i}
-\]
+$$
 
-直接计算可能在 \(x_i\) 较大时溢出。稳定形式：
+直接计算可能在 $x_i$ 较大时溢出。稳定形式：
 
-\[
+$$
 m+\log\sum_i e^{x_i-m},\quad m=\max_i x_i
-\]
+$$
 
 softmax、logsumexp、交叉熵、方差、归一化都有类似稳定实现。若公式本身不稳定，仅把 fp16 换 fp32 可能只是推迟失败。
 
@@ -238,9 +238,9 @@ softmax、logsumexp、交叉熵、方差、归一化都有类似稳定实现。�
 
 | dtype | 符号位 | 指数位 | fraction 位 | 有效精度约 | 最大有限值 | 最小正 normal | `eps`（1 附近间距） |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| fp16 | 1 | 5 | 10 | 约 3–4 位十进制 | 65504 | \(2^{-14}\approx6.10\times10^{-5}\) | \(2^{-10}\approx9.77\times10^{-4}\) |
-| bf16 | 1 | 8 | 7 | 约 2–3 位十进制 | 约 \(3.39\times10^{38}\) | \(2^{-126}\approx1.18\times10^{-38}\) | \(2^{-7}=0.0078125\) |
-| fp32 | 1 | 8 | 23 | 约 7 位十进制 | 约 \(3.40\times10^{38}\) | \(2^{-126}\approx1.18\times10^{-38}\) | \(2^{-23}\approx1.19\times10^{-7}\) |
+| fp16 | 1 | 5 | 10 | 约 3–4 位十进制 | 65504 | $2^{-14}\approx6.10\times10^{-5}$ | $2^{-10}\approx9.77\times10^{-4}$ |
+| bf16 | 1 | 8 | 7 | 约 2–3 位十进制 | 约 $3.39\times10^{38}$ | $2^{-126}\approx1.18\times10^{-38}$ | $2^{-7}=0.0078125$ |
+| fp32 | 1 | 8 | 23 | 约 7 位十进制 | 约 $3.40\times10^{38}$ | $2^{-126}\approx1.18\times10^{-38}$ | $2^{-23}\approx1.19\times10^{-7}$ |
 
 `fraction` 不含 normal 数隐含的前导 1；因此 fp16 的 normal significand 精度为 11 bit，bf16 为 8 bit，fp32 为 24 bit。
 
@@ -378,23 +378,23 @@ input = input.half()
 
 ### 1. 目标是防 fp16 梯度下溢
 
-若某个 backward op 产生 fp16 梯度，小于可表示范围的值可能变为 0。把 loss 乘以比例 \(S\)：
+若某个 backward op 产生 fp16 梯度，小于可表示范围的值可能变为 0。把 loss 乘以比例 $S$：
 
-\[
+$$
 L' = S L
-\]
+$$
 
 链式法则使所有梯度一起放大：
 
-\[
+$$
 \nabla_\theta L' = S\nabla_\theta L
-\]
+$$
 
-optimizer 更新前再除以 \(S\)，数学上恢复原梯度：
+optimizer 更新前再除以 $S$，数学上恢复原梯度：
 
-\[
+$$
 \frac{1}{S}\nabla_\theta L'=\nabla_\theta L
-\]
+$$
 
 这样中间反向传播中的小梯度更可能落在 fp16 可表示范围内。PyTorch 的解释见 [`torch.amp`: Gradient Scaling](https://docs.pytorch.org/docs/stable/amp.html#gradient-scaling)。
 
@@ -472,18 +472,18 @@ bf16 的指数范围与 fp32 接近，小梯度因“范围不足”而下溢的
 
 ### 1. 通用计算公式
 
-设参数个数为 \(N\)，某状态 dtype 每元素字节数为 \(B\)，则：
+设参数个数为 $N$，某状态 dtype 每元素字节数为 $B$，则：
 
-\[
+$$
 \text{memory}=N\times B
-\]
+$$
 
 十进制 GB 与二进制 GiB 不同：
 
-\[
+$$
 1\text{ GB}=10^9\text{ bytes},\quad
 1\text{ GiB}=2^{30}\text{ bytes}
-\]
+$$
 
 估算时明确单位，避免“70B 参数 × 多少字节”的口径混乱。
 
@@ -511,7 +511,7 @@ PyTorch dtype 列表见 [Tensor Attributes](https://docs.pytorch.org/docs/stable
 | SGD + momentum | 4N | 4N | 4N | 12N bytes |
 | Adam/AdamW，m/v 为 fp32 | 4N | 4N | 8N | 16N bytes |
 
-Adam 有一阶矩 \(m\) 和二阶矩 \(v\)，各一个与参数同 shape 的状态 tensor；算法见 [`torch.optim.Adam`](https://docs.pytorch.org/docs/stable/generated/torch.optim.Adam.html)。每个 parameter tensor 还可能有 step 等小型元数据，但大模型中主要量级由逐元素状态决定。
+Adam 有一阶矩 $m$ 和二阶矩 $v$，各一个与参数同 shape 的状态 tensor；算法见 [`torch.optim.Adam`](https://docs.pytorch.org/docs/stable/generated/torch.optim.Adam.html)。每个 parameter tensor 还可能有 step 等小型元数据，但大模型中主要量级由逐元素状态决定。
 
 ### 4. “混合精度是 16 bytes/param”不是永恒定律
 
@@ -550,15 +550,15 @@ fp32 Adam m/v        8
 
 按 16 bytes/param：
 
-\[
+$$
 10^9\times16=16\times10^9\text{ bytes}
-\]
+$$
 
 即约 16 GB，或：
 
-\[
+$$
 \frac{16\times10^9}{2^{30}}\approx14.90\text{ GiB}
-\]
+$$
 
 这只含参数、梯度和 optimizer states，不含：
 
@@ -574,7 +574,7 @@ fp32 Adam m/v        8
 
 activation 规模大致随：
 
-\[
+$$
 \text{batch}
 \times
 \text{sequence length}
@@ -582,7 +582,7 @@ activation 规模大致随：
 \text{hidden size}
 \times
 \text{layers}
-\]
+$$
 
 增长，并受 attention 中间量、MLP 扩张比例、保存策略和 dtype 影响。长序列时 attention 朴素中间矩阵还可能按序列长度平方增长。
 

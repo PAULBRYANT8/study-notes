@@ -4,6 +4,11 @@
 
 ## Entities
 
+### Papers
+
+- [[deepseekmoe]] — 细粒度专家切分、共享专家隔离及 2B/16B/145B 规模实验
+- [[glu-variants-improve-transformer]] — 门控 FFN 的结构、公平维度匹配方法与 T5 实验结果
+
 ### PyTorch TP
 
 - [[colwise-parallel]] — Linear 权重按输出维切，输出 `Shard(-1)` 无需归约
@@ -48,6 +53,8 @@
 
 ## Raw
 
+- [[2026-07-30-deepseekmoe]] — DeepSeekMoE arXiv v1 PDF、摘要页面快照与书目信息
+- [[2026-07-27-glu-variants-improve-transformer]] — 《GLU Variants Improve Transformer》arXiv v1 PDF 存档与书目信息
 - [[2026-07-26-pytorch-tp-source]] — PyTorch TP 源码锚点与关键片段
 - [[2026-07-25-pytorch-cp-source]] — PyTorch CP 源码锚点与关键片段，commit a07d9d50489
 

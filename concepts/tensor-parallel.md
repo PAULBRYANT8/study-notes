@@ -2,7 +2,7 @@
 title: Tensor Parallel (TP)
 type: concept
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [pytorch, 分布式, dtensor, 张量并行]
 sources: [[[2026-07-26-pytorch-tp-source]]]
 ---
@@ -14,6 +14,8 @@ Tensor Parallel（张量并行，TP）把**单个算子的权重矩阵**切开�
 ## 核心思路
 
 以 Transformer 的 MLP 为例，`y = W2 @ act(W1 @ x)`：
+
+这里写的是两矩阵普通 FFN；它的三矩阵门控变体、`2/3` 中间维度匹配方法与 T5 实验结果见 [[glu-variants-improve-transformer]]。
 
 - `W1` 按**列**切（[[colwise-parallel]]）→ 每卡得到一段 hidden，激活函数逐元素所以无需通信
 - `W2` 按**行**切（[[rowwise-parallel]]）→ 每卡的输出是全局结果的部分和，一次 allreduce 收尾

@@ -15,3 +15,5 @@
 - 2026-07-26 回补 CP 笔记到 TP 的交叉链接 —— [[context-parallel]]、[[cp-sequence-sharding]]、[[how-does-pytorch-cp-shard-sequences]]
 - 2026-07-26 写入 NPU 训练适配方向的学习路线，并把其中提到的 9 个未写主题登记进待写 —— [[npu-training-adaptation-learning-path]]、[[index]]
 - 2026-07-26 补全 NPU 训练适配的五项前置基础，并回链学习路线 —— [[linux-debugging-for-npu-adaptation]]、[[cpp-reading-for-pytorch-backends]]、[[python-advanced-mechanisms-for-pytorch]]、[[deep-learning-training-numerics]]、[[floating-point-error-analysis]]、[[npu-training-adaptation-learning-path]]、[[index]]、[[log]]
+- 2026-07-27 下载并总结《GLU Variants Improve Transformer》，回补门控 FFN 与 TP 的关联 —— [[2026-07-27-glu-variants-improve-transformer]]、[[glu-variants-improve-transformer]]、[[tensor-parallel]]、[[index]]
+- 2026-08-03 将 DeepSeekMoE 论文材料从根目录按知识库规范迁入 raw/entity，并补齐元数据与索引 —— [[2026-07-30-deepseekmoe]]、[[deepseekmoe]]、[[index]]

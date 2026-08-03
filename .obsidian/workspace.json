@@ -13,15 +13,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "index.md",
+                "file": "work/inplace-partial-rotary-mul-接入复盘.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "index"
+              "title": "inplace-partial-rotary-mul-接入复盘"
+            }
+          },
+          {
+            "id": "94e6381e327a2b54",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "work/inplace-partial-rotary-mul-接入复盘.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "inplace-partial-rotary-mul-接入复盘"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -183,15 +198,34 @@
       "bases:新建数据库": false
     }
   },
-  "active": "20e0898c180f5b4c",
+  "active": "94e6381e327a2b54",
   "lastOpenFiles": [
+    "raw/2026-07-30-deepseekmoe.md",
+    "entity/deepseekmoe.md",
+    "raw/2026-07-30-deepseekmoe.html",
+    "raw/2026-07-30-deepseekmoe.pdf",
+    "work/deepseek-v4.md",
+    "docs/superpowers/plans/2026-07-31-deepseek-v4-qa-note.md",
+    "docs/superpowers/plans",
+    "docs/superpowers/specs/2026-07-31-deepseek-v4-qa-note-design.md",
+    "docs/superpowers/specs",
+    "docs/superpowers",
+    "docs",
+    "DeepSeekMoE_2401.06066_中文总结.md",
+    "arxiv_2401.06066.html",
+    "DeepSeekMoE_2401.06066.pdf",
+    "work/inplace-partial-rotary-mul-接入介绍.md",
+    "work/inplace-partial-rotary-mul-接入复盘.md",
+    "concepts/python-advanced-mechanisms-for-pytorch.md",
+    "work/swiglu-group-接入复盘.md",
+    "work/SwigluGroup-融合算子接入介绍.md",
+    "work",
+    "index.md",
     "concepts/floating-point-error-analysis.md",
     "concepts/deep-learning-training-numerics.md",
-    "concepts/python-advanced-mechanisms-for-pytorch.md",
     "concepts/cpp-reading-for-pytorch-backends.md",
     "concepts/linux-debugging-for-npu-adaptation.md",
     "concepts/context-parallel.md",
-    "index.md",
     "log.md",
     "queries/npu-training-adaptation-learning-path.md",
     "entity/colwise-parallel.md",
@@ -201,25 +235,6 @@
     "concepts/dtensor-placement.md",
     "concepts/cp-sequence-sharding.md",
     "comparisons/colwise-vs-rowwise-parallel.md",
-    "comparisons/tp-vs-cp-sharding.md",
-    "comparisons/README.md",
-    "comparisons/cp-load-balancers.md",
-    "comparisons/allgather-vs-alltoall-kv-rotation.md",
-    "entity/head-tail-load-balancer.md",
-    "log.md.tmp.15508.36a5c7e1d661",
-    "index.md.tmp.15508.16d302c620c9",
-    "index.md.tmp.15508.1ec41ec9e043",
-    "log.md.tmp.23708.0e3bac2585a2",
-    "index.md.tmp.23708.1786b6916080",
-    "concepts/cp-sequence-sharding.md.tmp.23708.f5f724687b74",
-    "concepts/context-parallel.md.tmp.23708.11df47e9a007",
-    "queries/how-does-pytorch-tp-shard-modules.md",
-    "queries/how-does-pytorch-tp-shard-modules.md.tmp.23708.7b593a1bdc21",
-    "comparisons/tp-vs-cp-sharding.md.tmp.23708.0cfc9769376f",
-    "comparisons/colwise-vs-rowwise-parallel.md.tmp.23708.ae374b833955",
-    "entity/micro-pipeline-tp.md",
-    "entity/loss-parallel.md",
-    "entity/prepare-module-input-output.md",
-    "entity/sequence-parallel.md"
+    "log.md.tmp.15508.36a5c7e1d661"
   ]
 }

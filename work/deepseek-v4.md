@@ -5,6 +5,9 @@
 ## 问题索引
 
 - [[#^q001-router|Q001：Router 为每个 token 选择若干专家，并产生 routed score。这其中的Router指的是什么，请详细说明一下]]
+- [[#^q002-shared-routed-experts|Q002：为什么要拆分成共享专家和路由专家？两条 FFN 路径分别起什么作用？]]
+- [[#^q003-experts-zero-compile-config|Q003：使用 experts[0] 统一代表全局专家编译配置是否合理？]]
+- [[#^q004-profile-routed-shared-experts|Q004：路由专家和共享专家在采集的 profiling 上怎么区分？它们有什么区别？]]
 
 ## Q001：Router 指的是什么
 
@@ -254,5 +257,422 @@ MoE 训练通常增加专家级或设备级负载均衡约束，鼓励 Router �
 - [[swiglu-group-接入复盘#1.3 路由专家与共享专家|路由专家与共享专家]]
 - [[swiglu-group-接入复盘#4.1 两次 GMM 之间的融合点|两次 GMM 之间的融合点]]
 - [[swiglu-group-接入复盘#A.3 weight 为什么是 routed score|weight 为什么是 routed score]]
+
+[[#问题索引|返回问题索引]]
+
+## Q003：使用 `experts[0]` 统一代表全局专家编译配置是否合理
+
+- 记录日期：2026-08-03
+- 主题：DeepSeek-V4、NpuGroupedExperts、torch.compile、激活函数共享、编译配置
+
+> **原问题：** 对于deepseek-v4模型，使用experts[0]统一代表全局专家编译配置是否合理？ ^q003-experts-zero-compile-config
+
+### 回答
+
+#### 1. 结论
+
+在当前 DeepSeek-V4 专用训练路径中，**从 `experts[0]` 取出激活函数，编译一次后共享给所有 `NpuGroupedExperts`，是合理的优化**；但把它表述为“用 `experts[0]` 代表全局专家编译配置”并不准确，而且当前实现缺少对关键前提的显式检查。
+
+更准确的说法是：
+
+> `experts[0]` 只是“所有同构路由专家容器的代表模块”，用于提供待编译的激活函数；真正的全局编译配置由 `backend` 和 `dynamic_tokens` 等显式参数提供。
+
+因此判断是：**现有 DeepSeek-V4 路径下可用，但作为通用实现还不够稳健。**
+
+#### 2. `experts[0]` 到底代表什么
+
+当前代码先遍历模型：
+
+```python
+experts = [
+    module
+    for module in model.modules()
+    if isinstance(module, NpuGroupedExperts)
+]
+```
+
+这里的 `experts` 并不是一个 MoE 层内部的“专家 0、专家 1、专家 2”。列表中的每个元素都是一个 `NpuGroupedExperts` **容器模块**，通常对应一个 MoE 层中的整组本地路由专家；单个容器内部的 `w13` 和 `w2` 才打包了多个专家的参数。
+
+所以 `experts[0]` 表示的是模型遍历顺序中的第一个路由专家容器，而不是 Router 选择的第 0 号专家。将变量改名为 `expert_modules` 会更清楚。
+
+#### 3. 哪些信息来自全局配置，哪些信息来自 `experts[0]`
+
+当前调用关系可以概括为：
+
+```text
+compile_config.backend ───────────────┐
+parallel_dims.ep_enabled ─────────────┼─► 编译选项
+experts[0]._expert_activation_fn ─────┘   待编译函数
+                                          │
+                                          ▼
+                                  torch.compile 一次
+                                          │
+                                          ▼
+                              写回全部 NpuGroupedExperts
+```
+
+- `backend` 来自模型级 `compile_config`；
+- `dynamic_tokens` 由是否启用 Expert Parallel 决定；
+- `experts[0]` 只提供 `_expert_activation_fn`；
+- 编译结果随后被写入所有路由专家容器。
+
+所以，`experts[0]` 并没有统一代表完整的全局编译配置，它只代表“应当编译哪一种激活实现”。
+
+#### 4. 为什么当前路径可以共享同一个编译函数
+
+路由专家的主要数据流是：
+
+```text
+x ─► grouped_mm(w13_i) ─► h
+                         │
+                         ▼
+          共享的 compiled activation
+        (h, swiglu_limit, routed_scores)
+                         │
+                         ▼
+                grouped_mm(w2_i) ─► out
+```
+
+编译的只是中间激活桥接函数，而不是整个专家模块：
+
+- 每层不同的 `w13_i`、`w2_i` 位于编译函数之外，没有被闭包捕获；
+- `h`、`swiglu_limit` 和 `routed_scores` 都在调用时传入；
+- `npu_swiglu_group` 转换器会遍历全部 `NpuGroupedExperts`，为它们统一设置同一个 `swiglu_group_activation`；
+- 未启用该转换器时，各容器默认也使用同一个原生 `_expert_activation`。
+
+因此，在所有容器使用同一种激活实现的前提下，重复编译每一层只会增加编译时间和缓存占用，复用同一个编译入口更合适。
+
+需要注意：调用一次 `torch.compile` 只表示共享同一个编译包装器，并不绝对保证运行期间只有一个底层图或二进制。如果隐藏维度、可选参数或静态值不同，编译器仍可能产生不同的特化版本；当前代码主要把 token 数所在的第 0 维标记为动态维度。
+
+#### 5. 当前实现的风险
+
+当前代码隐含了以下不变量：
+
+```text
+所有 NpuGroupedExperts 的原始 activation_fn 完全相同
+```
+
+但 `compile_expert_activation()` 没有验证它。若以后出现不同激活实现混用，代码会：
+
+1. 只编译模型遍历得到的第一个模块的函数；
+2. 把这个函数覆盖到其他所有模块；
+3. 静默改变原本应使用另一种激活的模块语义。
+
+这样一来，模型模块的遍历顺序会意外影响计算结果。
+
+另外还有两个边界问题：
+
+- 当前 `compile_key` 只有 `(backend, dynamic_tokens)`，没有记录激活实现的种类；
+- 如果在同一个模型对象上更换编译配置，`experts[0]` 中保存的可能已经是旧的编译包装器，存在再次编译包装器而不是原始函数的风险。
+
+现有单元测试验证了“两个容器原始激活相同，编译一次并共享”的正常路径，但没有覆盖激活函数混用的情况。
+
+#### 6. 推荐的实现边界
+
+如果该函数只服务于当前同构的 DeepSeek-V4 路径，可以继续采用“编译一次、全部共享”的设计，但应至少增加显式校验：
+
+1. 将原始激活函数或稳定的 `activation_kind` 单独保存；
+2. 编译前确认所有容器的 `activation_kind` 一致，不一致就立即报错；
+3. 将编译键扩展为 `(activation_kind, backend, dynamic_tokens)`；
+4. 始终从未编译的原始函数创建编译包装器，避免重复包装。
+
+如果未来允许不同层选择不同激活，则不应再由 `experts[0]` 统一代表，而应按下面的键分组，每组只编译一次：
+
+```text
+(activation_kind, backend, dynamic_tokens)
+```
+
+#### 7. 最终判断
+
+| 判断对象 | 是否合理 |
+|---|---|
+| 所有层同构时，共享一次激活编译结果 | 合理 |
+| 用 `experts[0]` 取得同构模块的代表激活函数 | 有显式不变量检查时合理 |
+| 把 `experts[0]` 当作完整的全局编译配置 | 不准确 |
+| 未验证激活一致性就覆盖全部模块 | 不够稳健 |
+| 将来存在多种激活实现时仍只看 `experts[0]` | 不合理，应按激活类型分组编译 |
+
+一句话概括：
+
+> 可以全局共享的是“无层级状态、语义相同的激活计算图”，不是 `experts[0]` 这个模块本身；`experts[0]` 只有在“所有专家容器同构”被明确保证时，才适合作为代表。
+
+### 相关问题
+
+- [[#^q001-router|Q001：Router 指的是什么]]
+- [[#^q002-shared-routed-experts|Q002：为什么需要共享专家和路由专家]]
+
+[[#问题索引|返回问题索引]]
+
+## Q002：为什么需要共享专家和路由专家
+
+- 记录日期：2026-07-31
+- 主题：MoE、共享专家、路由专家、参数分工、稀疏计算
+
+> **问题（精简）：** 为什么要拆分成共享专家和路由专家？共享专家已经计算了 `w1/w2/w3`，路由专家还要对选中的 token 计算 `w13/w2`，这两条路径分别起什么作用？ ^q002-shared-routed-experts
+
+### 回答
+
+#### 1. 核心结论
+
+共享专家和路由专家不是重复计算同一套参数，而是两组参数独立、输出相加的 FFN 分支：
+
+\[
+y(x)=F_{shared}(x)+\sum_{i\in\operatorname{TopK}(x)}g_i(x)F_i(x)
+\]
+
+- 共享专家提供所有 token 都需要的公共底座；
+- 路由专家根据 token 和上下文提供专门化增量；
+- Router 产生的 \(g_i(x)\) 决定各路由专家对当前 token 的贡献。
+
+因此整体思想是：
+
+> MoE 输出 = 共享的基础变换 + 动态选择的专业变换。
+
+#### 2. 共享专家算完 FFN，为什么还不够
+
+共享专家计算的是自己的参数：
+
+\[
+F_{shared}(x)=W_{2,s}\left(\operatorname{SiLU}(xW_{1,s})\odot xW_{3,s}\right)
+\]
+
+路由专家计算的是另一套独立参数：
+
+\[
+F_i(x)=W_{2,i}\left(\operatorname{SiLU}(xW_{1,i})\odot xW_{3,i}\right)
+\]
+
+即使两条路径都有完整的 SwiGLU FFN，也有：
+
+\[
+W_{1,s}\neq W_{1,i},\qquad W_{2,s}\neq W_{2,i},\qquad W_{3,s}\neq W_{3,i}
+\]
+
+相同的算子结构不代表相同的知识。共享专家只完成了一套公共参数的变换，并没有执行所有路由专家学习到的专业能力。
+
+路由路径中的 `w13` 通常只是：
+
+\[
+W_{13}=\operatorname{concat}(W_1,W_3)
+\]
+
+它将 `w1` 和 `w3` 合并成一次 GMM，再切分为 gate 和 up 两部分。这是参数布局和算子融合方式，不是与共享专家不同的神经网络原理。
+
+#### 3. 两条路径如何配合
+
+```text
+                         ┌─► shared w1/w3 ─► SwiGLU ─► shared w2 ─┐
+token hidden states ─────┤                                      ├─► 相加
+                         └─► Router ─► dispatch                  │
+                                      └─► routed w13             │
+                                          └─► SwiGLU × score     │
+                                              └─► routed w2 ─────┘
+```
+
+在当前 DeepSeek-V4 接入语境中：
+
+1. 共享分支不经过 Router，所有 token 都执行同一套共享 FFN；
+2. Router 为每个 token 选择 Top-K 路由专家并产生 routed score；
+3. dispatch 将 token 复制、重排为对应的 token—专家 routed rows；
+4. 路由专家通过 `w13 → SwiGLU × score → w2` 计算专业增量；
+5. combine 恢复 token 顺序，再与共享专家输出相加。
+
+这里并不是只有少数“特殊 token”才进入路由路径。通常每个 token 都会经过共享专家，同时还会选择若干路由专家；只是从某个路由专家的角度看，它只接收与自己匹配的 token 子集。
+
+#### 4. 为什么两类专家都需要
+
+| 方案 | 主要问题 |
+|---|---|
+| 只有共享专家 | 退化为稠密 FFN，所有知识都压缩进同一套参数，无法利用大型稀疏专家池 |
+| 只有路由专家 | 每个专家都要重复学习语法、常见词义等公共知识，专家参数冗余，路由错误时也缺少稳定底座 |
+| 共享 + 路由专家 | 共享专家学习公共能力，路由专家集中学习差异化能力，在激活少量参数的同时扩大模型总容量 |
+
+这种拆分主要带来四个作用：
+
+1. **减少知识冗余**：公共知识不必在多个路由专家中重复保存；
+2. **提高专家专门化**：路由专家可以更多地学习代码、数学或特定语境中的增量特征；
+3. **扩大条件容量**：模型可以拥有很多路由专家，但每个 token 只计算 Top-K 个；
+4. **提高路由鲁棒性**：即使 Router 没选到最理想的专家，共享路径仍提供基础输出。
+
+#### 5. 计算代价与取舍
+
+共享专家不是免费的，它对所有 token 都产生固定计算量：
+
+\[
+\text{激活计算量}=\text{共享专家计算量}+\text{Top-K 路由专家计算量}
+\]
+
+为了控制总计算量，实际模型通常需要在共享专家数量、专家宽度和路由 Top-K 之间重新分配预算。共享专家过多会增加固定成本，并可能让模型过度依赖共享路径；共享专家过少，则公共知识仍会在路由专家中重复出现。因此两类专家的比例需要通过实验确定。
+
+#### 6. 一句话总结
+
+> 共享专家虽然完整计算了自己的一套 `w1/w3/w2`，但只负责公共基础能力；路由专家使用另一套独立参数，为每个 token 添加动态选择的专业增量。两者相加，才能同时获得稳定的通用能力、大规模稀疏参数容量和更强的专家专门化。
+
+### 相关问题
+
+- [[#^q001-router|Q001：Router 指的是什么]]
+
+[[#问题索引|返回问题索引]]
+
+## Q004：路由专家和共享专家在 profiling 上怎么区分
+
+- 记录日期：2026-08-03
+- 主题：DeepSeek-V4、profiling、路由专家、共享专家、GMM、SwigluGroup、Expert Parallel
+
+> **原问题：** 路由专家和共享专家在采集的profiling上怎么区分呢？它们有什么区别？ ^q004-profile-routed-shared-experts
+
+### 回答
+
+#### 1. 核心结论
+
+在 profiling 中，最可靠的办法不是只看一个 `SwigluGroup` 内核名称，而是看它所在的**完整算子链、输入形状和 routed-score 参数**：
+
+- 路由专家位于 `token permute/EP dispatch → 两次 Grouped MatMul → token unpermute/combine` 这条链路中；
+- 共享专家位于普通的 `w1/w3 MatMul → activation → w2 MatMul` 稠密 FFN 链路中；
+- 启用 `npu_swiglu_group` 后，两条路径都会出现同名的 `SwigluGroup`，但路由专家会传入 `[R, 1]` 的 routed-score `weight`，共享专家的 `weight` 为 `None`。
+
+所以，应当用“上下文 + shape + 参数”联合判断，而不能把所有 `SwigluGroup` 都算作路由专家。
+
+#### 2. 当前 DeepSeek-V4 前向算子链
+
+设：
+
+- (T)：当前 rank 上进入 MoE 层的 token 数；
+- (K)：Router 的 Top-K；
+- (R)：当前 rank 实际收到并处理的 routed rows 数；
+- (H)：单个路由专家的中间维度；
+- (H_s)：共享专家合并后的中间维度。
+
+路由专家的典型 profiling 链路是：
+
+```text
+Router
+  ↓
+npu_moe_token_permute(tokens)
+npu_moe_token_permute(routed_scores)
+  ↓
+[EP AllToAll + local re-routing]
+  ↓
+GroupedMatMul / aten::_grouped_mm       # w13，输入约 [R, D]
+  ↓
+SwigluGroup(weight=[R, 1])             # clamp + SwiGLU + score scaling
+  ↓
+GroupedMatMul / aten::_grouped_mm       # w2
+  ↓
+[local unpermute + EP AllToAll]
+  ↓
+npu_moe_token_unpermute / Top-K combine
+```
+
+共享专家的典型链路是：
+
+```text
+MatMul / Linear                         # w1，输入 [T, D]
+MatMul / Linear                         # w3，输入 [T, D]
+  ↓
+Concat                                  # 得到 [T, 2H_s]
+  ↓
+SwigluGroup(weight=None)                # clamp + SwiGLU，无 routed score
+  ↓
+MatMul / Linear                         # w2
+  ↓
+与路由专家输出相加
+```
+
+算子名称可能随 CANN、torch_npu 和编译器版本变化，例如显示为 `GroupedMatmul`、`GroupedMatMul` 或关联到框架侧的 `aten::_grouped_mm`。应根据算子语义和前后关系识别，不依赖某一种精确拼写。
+
+#### 3. 两条路径在 profiling 中的主要差异
+
+| 观察项 | 路由专家 | 共享专家 |
+|---|---|---|
+| 处理对象 | 每个 token 的 Top-K 路由分支 | 当前 rank 上的全部 token |
+| 激活输入行数 | (R)，随路由和 EP 收发变化 | (T)，通常相对固定 |
+| 权重布局 | 多个专家打包的三维 `w13/w2` | 普通二维 `w1/w3/w2` |
+| 矩阵乘法 | 两次 Grouped MatMul | 三次普通 MatMul/Linear，`w1` 和 `w3` 各一次 |
+| routed score | 有；融合时作为 `weight=[R,1]` | 没有，`weight=None` |
+| token 重排 | 有 permute、unpermute | 没有路由重排 |
+| EP 通信 | 可能有 AllToAll 和本地 re-routing | 不参与路由产生的 EP AllToAll |
+| 工作量 | 随各专家 token 分布动态变化 | 对全部 token 固定执行 |
+| 性能特征 | 易受负载不均、短分组和通信影响 | shape 稳定，通常更接近普通稠密 GEMM |
+| 对 Router 的梯度 | routed score 路径会把梯度传回 Router | 与 Router 无关 |
+
+共享专家仍可能因为 Tensor Parallel 或其他并行策略出现通信算子；“没有通信”并不是它的定义。真正的区别是：共享专家不需要由路由产生的 token dispatch、EP AllToAll 和 combine。
+
+#### 4. 为什么只看 `SwigluGroup` 名字区分不了
+
+启用 `npu_swiglu_group` 后，两条路径最终调用的是同一个公共算子：
+
+```python
+torch.ops.cann_ops_nn.swiglu_group.default(...)
+```
+
+但调用参数不同：
+
+```text
+路由专家：x=[R, 2H]，weight=[R, 1]
+共享专家：x=[T, 2H_s]，weight=None
+```
+
+路由专家的 `weight` 是 Router 为每个 token—专家分支产生的动态分数；共享专家对所有 token 固定执行，因此不需要该分数。
+
+这也意味着：
+
+- `api_statistic.csv` 如果只按 API 名聚合，通常不能可靠地把两个 `SwigluGroup` 拆开；
+- `kernel_details.csv` 如果只有内核名、没有完整调用上下文，也可能无法可靠区分；
+- `trace_view.json` 中的时间线、CPU API 与 NPU kernel 关联、输入 shape 更适合做归属判断。
+
+#### 5. 没启用 `npu_swiglu_group` 时的区别
+
+如果只启用了 `npu_moe_dispatch + npu_gmm`，两条路径的激活算子本身也不同：
+
+- 路由专家默认使用 `torch_npu.npu_swiglu`，随后执行 routed-score 乘法；
+- 共享专家默认使用拆分后的 `Silu + Mul` 小算子路径；
+- 两者仍分别位于 Grouped MatMul 链和普通 MatMul 链中。
+
+这种配置下，仅从激活算子名称通常也能初步区分；启用统一的 `SwigluGroup` 后，则必须再看 `weight` 和上下文。
+
+#### 6. 实际查看 trace 的推荐步骤
+
+1. 在 `trace_view.json` 中先定位 `npu_moe_token_permute`；
+2. 沿时间线向后查看，找到相邻的两次 Grouped MatMul；
+3. 两次 GMM 中间的激活属于路由专家；
+4. 检查其输入行数是否为 (R)，以及是否存在 `[R,1]` 的 score/weight；
+5. 再定位后面的 `w1/w3` 普通 MatMul、Concat、激活和 `w2` MatMul，这一段属于共享专家；
+6. 在反向阶段，用 `GroupedMatMul` 梯度、路由重排反向和 EP 通信识别路由分支，用普通 MatMul 梯度识别共享分支。
+
+当前 DeepSeek-V4 NPU forward 的 Python 调用顺序是先运行路由专家路径，再运行共享专家路径，最后相加。不过 NPU 异步执行、不同 stream 和 `torch.compile` 可能让设备时间线出现重叠或融合，所以调用先后只能作为辅助依据。
+
+#### 7. 如果想让 profiling 一眼可辨
+
+当前实现没有为两条路径设置独立 profiler range。最直接的改进是在 profiling 专用路径中增加两个明确范围：
+
+```python
+with torch.profiler.record_function("deepseek_v4.moe.routed_experts"):
+    expert_out = _run_local_experts(...)
+
+with torch.profiler.record_function("deepseek_v4.moe.shared_experts"):
+    out = _shared_expert_output(...)
+```
+
+这样可以在 trace 中直接根据父级范围归属 NPU kernel。若启用了 `torch.compile`，需要先验证这些范围能否保留且不会造成额外 graph break；否则应在编译区域外增加标记，或使用当前编译栈支持的 profiler annotation。
+
+在不修改代码的情况下，应至少打开：
+
+```text
+profile_record_shapes = True
+profile_with_stack = True
+```
+
+其中 shape 是最关键的信息；stack 在编译模式下可能主要显示编译包装层，因此不能完全替代显式 range。
+
+#### 8. 一句话总结
+
+> 路由专家的 profiling 指纹是“动态 routed rows + token 重排/EP 通信 + 两次 GMM + 带 routed-score weight 的激活”；共享专家的指纹是“全部 token + 普通 w1/w3/w2 MatMul + 不带 weight 的激活”。两者可以使用同一个 `SwigluGroup` 内核，但调用语义并不相同。
+
+### 相关问题
+
+- [[#^q001-router|Q001：Router 指的是什么]]
+- [[#^q002-shared-routed-experts|Q002：为什么需要共享专家和路由专家]]
+- [[#^q003-experts-zero-compile-config|Q003：使用 experts[0] 统一代表全局专家编译配置是否合理]]
 
 [[#问题索引|返回问题索引]]

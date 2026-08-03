@@ -1,4 +1,17 @@
+---
+title: DeepSeekMoE
+type: entity
+created: 2026-07-30
+updated: 2026-08-03
+tags: [DeepSeekMoE, MoE, 混合专家, 大语言模型, 论文]
+sources:
+  - "[[2026-07-30-deepseekmoe]]"
+  - https://arxiv.org/abs/2401.06066
+---
+
 # DeepSeekMoE：面向极致专家专门化的混合专家语言模型——中文总结
+
+DeepSeekMoE 是 DeepSeek-AI 等机构提出的一种混合专家语言模型架构及同名论文，核心方法是通过细粒度专家切分和共享专家隔离提高专家专门化程度与参数效率。
 
 ## 文献信息
 
@@ -11,8 +24,7 @@
 - DOI：10.48550/arXiv.2401.06066
 - 原始网页：https://arxiv.org/abs/2401.06066
 - 开源仓库：https://github.com/deepseek-ai/DeepSeek-MoE
-- 本地原文：DeepSeekMoE_2401.06066.pdf
-- 本地网页：arxiv_2401.06066.html
+- 本地原始材料：[[2026-07-30-deepseekmoe]]
 
 ## 一句话概括
 

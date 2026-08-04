@@ -4,7 +4,7 @@ type: comparison
 created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, linear]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 两者是一对：**先 colwise 后 rowwise**，中间那层零通信，整段只在末尾付一次归约。单独用任何一个都会在两端各产生一次通信，得不偿失。

@@ -4,7 +4,7 @@ type: concept
 created: 2026-07-25
 updated: 2026-07-25
 tags: [pytorch, 分布式, 长序列, attention]
-sources: [[[2026-07-25-pytorch-cp-source]]]
+sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
 
 Context Parallel（上下文并行，CP）是**沿序列维度**切分张量的并行方式：每个 rank 只持有序列的一段，attention 通过 rank 间交换 KV 来补全全局依赖。

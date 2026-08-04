@@ -5,7 +5,7 @@ created: 2026-07-25
 updated: 2026-07-25
 tags: [pytorch, context-parallel, 分片]
 sources:
-  - [[2026-07-25-pytorch-cp-source]]
+  - "[[2026-07-25-pytorch-cp-source]]"
   - 本地仓库 commit a07d9d50489 (2026-07-25), version.txt 2.14.0a0
 ---
 

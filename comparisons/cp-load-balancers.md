@@ -4,7 +4,7 @@ type: comparison
 created: 2026-07-25
 updated: 2026-07-25
 tags: [pytorch, context-parallel, 负载均衡]
-sources: [[[2026-07-25-pytorch-cp-source]]]
+sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
 
 单文档因果掩码用 [[head-tail-load-balancer]]（默认，不用配置）；多文档打包用 [[per-document-head-tail-load-balancer]]；掩码不是标准因果形状、且用 flex_attention，才需要 [[ptrr-load-balancer]]。

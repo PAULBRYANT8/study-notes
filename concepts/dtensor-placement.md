@@ -4,7 +4,7 @@ type: concept
 created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, dtensor, 分布式, 集合通信]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 Placement 描述一个全局张量在 DeviceMesh 的某一维上**怎么分布**。它是 [[tensor-parallel]] 和 [[context-parallel]] 共同的底座——两者都只是在选不同的 placement。

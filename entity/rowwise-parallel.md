@@ -4,7 +4,7 @@ type: entity
 created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, linear, embedding]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 `RowwiseParallel` 把权重按**输入维度**（行）切开，输入要求按最后一维分片，输出是 `Partial`，归约后才是正确结果。

@@ -4,7 +4,7 @@ type: entity
 created: 2026-07-25
 updated: 2026-07-25
 tags: [pytorch, context-parallel, 负载均衡, 文档掩码]
-sources: [[[2026-07-25-pytorch-cp-source]]]
+sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
 
 `_PerDocumentHeadTailLoadBalancer` 把 [[head-tail-load-balancer]] 的头尾配对**在每篇文档内部**各做一遍，用于多文档打包（document packing）场景。

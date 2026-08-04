@@ -4,7 +4,7 @@ type: comparison
 created: 2026-07-25
 updated: 2026-07-25
 tags: [pytorch, context-parallel, 集合通信, 显存]
-sources: [[[2026-07-25-pytorch-cp-source]]]
+sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
 
 [[ring-attention]] 每步都要拿到别的 rank 的 KV 分片，PyTorch 提供两种实现，用**显存换通信次数**，默认是 allgather。

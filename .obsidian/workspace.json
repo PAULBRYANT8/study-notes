@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "work/inplace-partial-rotary-mul-接入复盘.md",
-                "mode": "source",
+                "file": "work/deepseek-v4.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "inplace-partial-rotary-mul-接入复盘"
+              "title": "deepseek-v4"
             }
           }
         ],
@@ -200,6 +200,8 @@
   },
   "active": "94e6381e327a2b54",
   "lastOpenFiles": [
+    "work/swiglu-group-接入复盘.md",
+    "work/inplace-partial-rotary-mul-接入复盘.md",
     "raw/2026-07-30-deepseekmoe.md",
     "entity/deepseekmoe.md",
     "raw/2026-07-30-deepseekmoe.html",
@@ -215,9 +217,7 @@
     "arxiv_2401.06066.html",
     "DeepSeekMoE_2401.06066.pdf",
     "work/inplace-partial-rotary-mul-接入介绍.md",
-    "work/inplace-partial-rotary-mul-接入复盘.md",
     "concepts/python-advanced-mechanisms-for-pytorch.md",
-    "work/swiglu-group-接入复盘.md",
     "work/SwigluGroup-融合算子接入介绍.md",
     "work",
     "index.md",

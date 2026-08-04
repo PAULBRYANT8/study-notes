@@ -4,7 +4,7 @@ type: concept
 created: 2026-07-25
 updated: 2026-07-25
 tags: [pytorch, context-parallel, attention, sdpa]
-sources: [[[2026-07-25-pytorch-cp-source]]]
+sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
 
 Ring attention 是 CP 下计算 attention 的方法：Q 固定在本地，KV 分片沿环形拓扑轮转 world_size 步，每步算一次局部 SDPA，用 logsumexp 增量合并成全局结果。

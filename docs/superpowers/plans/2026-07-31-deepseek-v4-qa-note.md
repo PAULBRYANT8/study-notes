@@ -60,8 +60,8 @@ Append this entry header without changing spacing or punctuation inside the orig
 The answer must contain these concrete sections and claims:
 
 1. “核心定义”：Router is the small learnable gating module in each MoE layer, not an expert and not an external scheduler.
-2. “输入与输出”：for token hidden state \(u_t^l\), explain Router logits, normalized routing scores, Top-K expert indices, and gate weights.
-3. “计算过程”：show \(z_{i,t}=(u_t^l)^T e_i^l\), \(s_{i,t}=\operatorname{Softmax}_i(z_{i,t})\), Top-K masking, and weighted expert output.
+2. “输入与输出”：for token hidden state $u_t^l$, explain Router logits, normalized routing scores, Top-K expert indices, and gate weights.
+3. “计算过程”：show $z_{i,t}=(u_t^l)^T e_i^l$, $s_{i,t}=\operatorname{Softmax}_i(z_{i,t})$, Top-K masking, and weighted expert output.
 4. “数字示例”：use scores `[0.58, 0.13, 0.03, 0.26]` with Top-2 selecting experts 1 and 4.
 5. “DeepSeek-V4 当前代码语境”：state that Router runs before dispatch, token reorder and GMM; routed score scales selected routed rows around the activation path and is not `w1/w2/w3`.
 6. “共享专家”：state that shared experts bypass Router and do not carry routed score in the current recorded path.
@@ -94,7 +94,7 @@ Expected: the file check exits 0 and the count is `2`, once in the index and onc
 Run:
 
 ```bash
-rg -n '\[\[#\^q001-router\||\^q001-router$' work/deepseek-v4.md
+rg -n '$$$$#\^q001-router\||\^q001-router$' work/deepseek-v4.md
 ```
 
 Expected: two matches using the exact identifier `q001-router`: the index link and the original-question block.

@@ -4,7 +4,7 @@ type: entity
 created: 2026-07-25
 updated: 2026-07-25
 tags: [pytorch, context-parallel, 负载均衡, flex-attention, 调度]
-sources: [[[2026-07-25-pytorch-cp-source]]]
+sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
 
 `_PTRRLoadBalancer`（Processing-Time based Round-Robin）不假设掩码形状，而是**从 `BlockMask` 里读出每个 Q 块的实际计算量**，当作调度问题求解。只能配 `flex_attention()` 使用。

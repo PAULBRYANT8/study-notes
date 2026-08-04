@@ -5,8 +5,8 @@ created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, context-parallel, 分布式]
 sources:
-  - [[2026-07-26-pytorch-tp-source]]
-  - [[2026-07-25-pytorch-cp-source]]
+  - "[[2026-07-26-pytorch-tp-source]]"
+  - "[[2026-07-25-pytorch-cp-source]]"
 ---
 
 TP 切**参数**，CP 切**激活的序列维**。两者正交，可以叠在同一个模型的不同 mesh 维上。切的东西不同导致实现风格也完全不同：TP 声明式、全程持有 DTensor；CP 命令式、切完立刻退回本地张量。

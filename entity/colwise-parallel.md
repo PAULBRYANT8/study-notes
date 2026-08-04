@@ -4,7 +4,7 @@ type: entity
 created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, linear, embedding]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 `ColwiseParallel` 把 `nn.Linear` / `nn.Embedding` 的权重按**输出维度**（列）切开，输入要求完整复制，输出天然按最后一维分片。

@@ -4,7 +4,7 @@ type: entity
 created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, inductor, 通信重叠, symm-mem]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 `micro_pipeline_tp_pass` 是 inductor 的一个 post-grad FX pass，把 TP 产生的 **集合通信 + matmul** 融合成一个算子，让通信按 micro-batch 切成小块与计算流水重叠。俗称 async TP。

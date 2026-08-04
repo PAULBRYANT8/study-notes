@@ -5,7 +5,7 @@ created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, 分片]
 sources:
-  - [[2026-07-26-pytorch-tp-source]]
+  - "[[2026-07-26-pytorch-tp-source]]"
   - 本地仓库 commit a07d9d50489 (2026-07-25), version.txt 2.14.0a0
 ---
 

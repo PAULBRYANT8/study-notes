@@ -4,7 +4,7 @@ type: entity
 created: 2026-07-26
 updated: 2026-07-26
 tags: [pytorch, tensor-parallel, layernorm, 显存]
-sources: [[[2026-07-26-pytorch-tp-source]]]
+sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
 
 `SequenceParallel` 处理 TP 覆盖不到的那些层（LayerNorm、Dropout、RMSNorm）：**参数复制，激活沿序列维切分**，让这些层的 activation 也不必每卡存一份完整的。

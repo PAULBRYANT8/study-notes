@@ -2,7 +2,7 @@
 title: NPU 训练适配方向要具备哪些知识，怎么学？
 type: query
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-08-12
 tags: [ascend, npu, 训练适配, 学习路线, 职业规划]
 sources:
   - 个人规划，无外部材料。技术栈细节（工具名、组件名）以当前 CANN / torch_npu 版本官方文档为准
@@ -45,6 +45,7 @@ sources:
 - **Linux + 调试**：[[linux-debugging-for-npu-adaptation]] 整理了 gdb 看 core dump、pdb、`perf top`、`strace`、dmesg 和分层排障流程。适配岗遇到 segfault 的频率远高于普通算法岗。
 - **C++（读 > 写）**：[[cpp-reading-for-pytorch-backends]] 整理了模板、RAII、智能指针、宏展开以及从 schema/注册追到设备 kernel 的方法。目标是能读懂 ATen 和 torch_npu 的 C++ 层，不要求你写出漂亮的现代 C++。
 - **Python 进阶**：[[python-advanced-mechanisms-for-pytorch]] 整理了装饰器、上下文管理器、`__torch_function__` / `__torch_dispatch__` 一类的钩子机制，以及 C 扩展是怎么被调用的。
+- **Python 环境与依赖**：[[pip-requirements-file-format]] 速查 requirements 文件的逐行语法、pip 选项、拆分引用和环境变量写法。
 - **深度学习基础的"数值"部分**：[[deep-learning-training-numerics]] 整理了反向传播的链式结构、混合精度（fp16/bf16 的表示范围与舍入）、loss scale 为什么存在、优化器状态占多少显存。**这部分薄的话，精度问题永远查不明白。**
 - **一点数值分析常识**：[[floating-point-error-analysis]] 整理了浮点加法不满足结合律、误差如何累积、相对误差和绝对误差什么时候各自失效，以及如何设计跨设备比较容差。
 
@@ -257,6 +258,6 @@ GPU 结果对、NPU 结果不对，是这个岗位最常见也最难的问题。
 
 ## 相关
 
-[[linux-debugging-for-npu-adaptation]] · [[cpp-reading-for-pytorch-backends]] · [[python-advanced-mechanisms-for-pytorch]] · [[deep-learning-training-numerics]] · [[floating-point-error-analysis]] · [[tensor-parallel]] · [[context-parallel]] · [[dtensor-placement]] · [[tp-vs-cp-sharding]] · [[SCHEMA]]
+[[linux-debugging-for-npu-adaptation]] · [[cpp-reading-for-pytorch-backends]] · [[python-advanced-mechanisms-for-pytorch]] · [[pip-requirements-file-format]] · [[deep-learning-training-numerics]] · [[floating-point-error-analysis]] · [[tensor-parallel]] · [[context-parallel]] · [[dtensor-placement]] · [[tp-vs-cp-sharding]] · [[SCHEMA]]
 
 待写（本文里提到但还没有笔记的坑）：[[ascend-davinci-architecture]] · [[cann-stack]] · [[torch-dispatcher]] · [[hccl-vs-nccl]] · [[npu-precision-debugging]] · [[ascend-c]] · [[torchair]] · [[pipeline-parallel]] · [[zero-and-fsdp]]

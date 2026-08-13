@@ -8,8 +8,8 @@
 
 - 将 `log.md` 中的 Obsidian Wikilink 转为相对 `log.md` 的标准 Markdown 链接。
 - 更新 `log.md` 顶部的格式说明。
-- 更新 `SCHEMA.md` 的链接规范和日志录入步骤，明确 `log.md` 使用标准 Markdown 相对链接；其他笔记继续使用 Wikilink。
-- 不改动日志日期、动作描述、目标文档内容或其他笔记中的链接。
+- 不修改 `SCHEMA.md` 或任何其他文件。
+- 不改动日志日期、动作描述或目标文档内容。
 
 ## 链接规则
 
@@ -22,5 +22,5 @@
 
 - 检查 `log.md` 中每个 Markdown 内部链接的目标文件均存在。
 - 检查日志条目中不再残留 Wikilink。
-- 检查 `SCHEMA.md` 与 `log.md` 的格式说明一致。
+- 检查 `log.md` 顶部说明与实际链接格式一致。
 - 运行 `git diff --check`，确认没有空白字符错误。

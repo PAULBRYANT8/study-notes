@@ -88,7 +88,7 @@ requests
 
 ### 续行
 
-逻辑行末尾未转义的反斜杠 `\` 会续接下一物理行；对应换行被忽略。
+物理行末尾未转义的反斜杠 `\` 会续接下一物理行；对应换行被忽略。
 
 ```text
 requests>=2.32,\
@@ -161,6 +161,8 @@ demo-package @ https://packages.example.invalid/files/demo_package-1.0-py3-none-
 ```
 
 模板中的 `${PRIVATE_INDEX_TOKEN}` 不是实际凭据；不要把真实 token、密码或包含它们的展开结果提交到仓库。
+
+> **实践建议（不是格式要求）**：凭据若含 URL 保留字符，应按索引服务要求先做 percent-encoding，并使用该服务要求的用户名形式。
 
 ## 6. 常见坑与检查清单
 

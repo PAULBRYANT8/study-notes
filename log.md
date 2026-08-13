@@ -19,3 +19,4 @@
 - 2026-07-27 扩展 Python callable、`__call__` 调用协议、典型作用及 PyTorch Module 调用链说明 —— [[python-advanced-mechanisms-for-pytorch]]、[[log]]
 - 2026-08-03 将 DeepSeekMoE 论文材料从根目录按知识库规范迁入 raw/entity，并补齐元数据与索引 —— [[2026-07-30-deepseekmoe]]、[[deepseekmoe]]、[[index]]
 - 2026-08-04 完成全库 Markdown 结构校验，统一 Obsidian 数学公式语法并修复 frontmatter 链接和问答锚点 —— [[SCHEMA]]、[[deep-learning-training-numerics]]、[[floating-point-error-analysis]]、[[deepseek-v4]]
+- 2026-08-13 整理 pip requirements 文件格式的官方来源摘录与中文速查，并加入内容目录 —— [2026-08-12-pip-requirements-file-format](raw/2026-08-12-pip-requirements-file-format.md)、[pip-requirements-file-format](concepts/pip-requirements-file-format.md)、[index](index.md)、[log](log.md)

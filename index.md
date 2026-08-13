@@ -29,6 +29,7 @@
 - [[linux-debugging-for-npu-adaptation]] — 用 gdb/core、pdb、strace、perf 和 dmesg 按层定位训练崩溃、hang 与 host 性能问题
 - [[cpp-reading-for-pytorch-backends]] — 围绕模板、RAII、智能指针、宏、注册和动态链接读懂 ATen/torch_npu C++ 调用链
 - [[python-advanced-mechanisms-for-pytorch]] — 装饰器、context、hook/override 协议及 Python 跨入 C/C++ 扩展的完整路径
+- [[pip-requirements-file-format]] — pip requirements 每行语法、选项作用域、文件拆分、环境变量及常见坑速查
 - [[deep-learning-training-numerics]] — 反向传播、fp16/bf16、AMP、loss scaling 和参数/梯度/优化器/激活显存账本
 - [[floating-point-error-analysis]] — 非结合律、误差累积、条件数、稳定算法，以及 rtol/atol 何时失效、如何组合
 - [[dtensor-placement]] — Shard/Replicate/Partial 与集合通信的映射表，TP 和 CP 共同的底座

@@ -6,6 +6,8 @@ updated: 2026-08-12
 tags: [pip, python, requirements-file, 包管理]
 sources:
   - https://pip.pypa.io/en/stable/reference/requirements-file-format/
+  - https://github.com/pypa/pip/blob/634a6ec1a5d9dcc2433571cdb2f4c58a4bb29caf/docs/html/reference/requirements-file-format.md
+  - https://github.com/pypa/pip/releases/tag/26.2.1
 ---
 
 # pip Requirements File Format 官方资料摘录
@@ -14,7 +16,9 @@ pip requirements 文件是在执行 `pip install` 时列出待安装项的清单
 
 ## 来源信息
 
-- 来源 URL：https://pip.pypa.io/en/stable/reference/requirements-file-format/
+- stable 文档：https://pip.pypa.io/en/stable/reference/requirements-file-format/
+- v26.2.1 固定文档：https://github.com/pypa/pip/blob/634a6ec1a5d9dcc2433571cdb2f4c58a4bb29caf/docs/html/reference/requirements-file-format.md
+- release/tag：https://github.com/pypa/pip/releases/tag/26.2.1（该 tag 指向 commit `634a6ec1a5d9dcc2433571cdb2f4c58a4bb29caf`）
 - 访问日期：2026-08-12
 - 页面版本：pip documentation v26.2.1
 
@@ -27,7 +31,7 @@ pip requirements 文件是在执行 `pip install` 时列出待安装项的清单
 
 requirements 文件的每个逻辑行表示一个待安装项或传给 `pip install` 的参数，支持以下形式：
 
-- `[--option ...]`
+- `[[--option]...]`，表示零个或多个受支持选项
 - requirement specifier
 - archive URL 或路径
 - `[-e]` 本地项目路径

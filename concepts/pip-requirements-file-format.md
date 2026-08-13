@@ -6,6 +6,7 @@ updated: 2026-08-13
 tags: [pip, python, requirements-file, 依赖管理, 包管理]
 sources:
   - https://pip.pypa.io/en/stable/reference/requirements-file-format/
+  - https://pip.pypa.io/en/stable/cli/pip_install/#finding-packages
   - https://github.com/pypa/pip/blob/634a6ec1a5d9dcc2433571cdb2f4c58a4bb29caf/docs/html/reference/requirements-file-format.md
   - https://github.com/pypa/pip/releases/tag/26.2.1
   - "[[raw/2026-08-12-pip-requirements-file-format]]"
@@ -145,9 +146,8 @@ requirements 文件只支持 `${UPPERCASE_NAME}` 这种带花括号的大写名�
 下面是一个仅含占位信息的组合模板：
 
 ```text
-# index 配置；PRIVATE_INDEX_TOKEN 由运行环境注入
---index-url https://pypi.org/simple
---extra-index-url https://token:${PRIVATE_INDEX_TOKEN}@packages.example.invalid/simple
+# 单一受控私有索引或安全聚合公共/私有包的代理索引
+--index-url https://${PRIVATE_INDEX_USER}:${PRIVATE_INDEX_TOKEN}@packages.example.com/simple
 
 # 拆分 requirements
 -r requirements/base.txt
@@ -160,7 +160,10 @@ importlib-metadata>=7 ; python_version < "3.10"
 demo-package @ https://packages.example.invalid/files/demo_package-1.0-py3-none-any.whl
 ```
 
-模板中的 `${PRIVATE_INDEX_TOKEN}` 不是实际凭据；不要把真实 token、密码或包含它们的展开结果提交到仓库。
+模板中的 `${PRIVATE_INDEX_USER}` 和 `${PRIVATE_INDEX_TOKEN}` 不是实际凭据；不要把真实用户名、token、密码或包含它们的展开结果提交到仓库。
+
+> [!WARNING] dependency confusion
+> pip 的包搜索位置没有优先级：它会检查所有来源，再从满足约束的候选中选择“最佳”候选。pip 官方明确警告，不要用 `--extra-index-url` 搜索主仓库不存在的私有包，因为公共索引中的同名包可能被选中。私有依赖应使用单一受控索引，或能安全聚合公共与私有包的代理索引。参见 [Finding Packages](https://pip.pypa.io/en/stable/cli/pip_install/#finding-packages) 与 [pip install 示例中的官方警告](https://pip.pypa.io/en/stable/cli/pip_install/#examples)。
 
 > **实践建议（不是格式要求）**：凭据若含 URL 保留字符，应按索引服务要求先做 percent-encoding，并使用该服务要求的用户名形式。
 
@@ -191,5 +194,6 @@ demo-package @ https://packages.example.invalid/files/demo_package-1.0-py3-none-
 ## 来源
 
 - [pip Requirements File Format（stable）](https://pip.pypa.io/en/stable/reference/requirements-file-format/)
+- [pip install：Finding Packages](https://pip.pypa.io/en/stable/cli/pip_install/#finding-packages)
 - [pip v26.2.1 文档固定 commit](https://github.com/pypa/pip/blob/634a6ec1a5d9dcc2433571cdb2f4c58a4bb29caf/docs/html/reference/requirements-file-format.md)
 - [pip 26.2.1 release/tag](https://github.com/pypa/pip/releases/tag/26.2.1)

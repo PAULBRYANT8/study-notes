@@ -54,6 +54,7 @@
 
 ## Raw
 
+- [[2026-08-12-pip-requirements-file-format]] — pip Requirements File Format v26.2.1 官方页面事实摘录
 - [[2026-07-30-deepseekmoe]] — DeepSeekMoE arXiv v1 PDF、摘要页面快照与书目信息
 - [[2026-07-27-glu-variants-improve-transformer]] — 《GLU Variants Improve Transformer》arXiv v1 PDF 存档与书目信息
 - [[2026-07-26-pytorch-tp-source]] — PyTorch TP 源码锚点与关键片段

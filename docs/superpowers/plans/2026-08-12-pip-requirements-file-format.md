@@ -13,13 +13,13 @@
 ### Task 1: 建立隔离执行目录并确认基线
 
 **Files:**
-- Create: `/tmp/study-notes-pip-sync.h0Il7G/repo`（临时克隆，不进入仓库）
+- Create: `/tmp/study-notes-pip-sync-<随机>/repo`（临时克隆，不进入仓库）
 
 - [ ] **Step 1: 获取最新远端并克隆**
 
 Run:
 ```bash
-git clone --branch main --single-branch https://github.com/PAULBRYANT8/study-notes.git /tmp/study-notes-pip-sync.h0Il7G/repo
+git clone --branch main --single-branch https://github.com/PAULBRYANT8/study-notes.git /tmp/study-notes-pip-sync-<随机>/repo
 ```
 Expected: 克隆成功，工作区干净，HEAD 等于 `origin/main`。
 

@@ -320,7 +320,264 @@ return torch.nn.functional.silu(gate) * up
 这是模型算法层面的拆分；Inductor decomposition 则是编译器在 ATen/FX 图上进行的算子替换，
 两者属于不同层次。
 
-## 三、component 是什么
+## 三、lowering 是什么
+
+### 1. 定义：把 FX/ATen 节点翻译成 Inductor IR
+
+`lowering` 可以理解为“降低抽象层次”。Dynamo 捕获到的 FX 图仍然接近 ATen 算子图，
+例如 `aten.add.Tensor`、`aten.mm`、`aten.native_layer_norm`。Inductor 需要把这些节点翻译
+成自己能够调度和优化的中间表示（Inductor IR），这一步就是 lowering。
+
+从实现角度看，Inductor 的 `GraphLowering` 会遍历 FX 图的节点，并为每个节点查找已注册的
+lowering 函数。lowering 的输入通常不是普通的 `torch.Tensor`，而是描述值、形状、布局和
+设备信息的 `TensorBox`；输出也通常是 `TensorBox`、`StorageBox` 或其他 IR 节点。也就是说，
+它并不是马上执行算子，而是在“构建一份未来如何执行的计划”。
+
+```text
+FX/ATen 节点
+    ↓ 查找对应 lowering
+规范化输入：dtype、device、shape、layout、stride
+    ↓
+创建 Inductor IR：Pointwise / Reduction / ExternKernel / 模板节点
+    ↓
+Scheduler 分析依赖、布局和并行度
+    ↓
+Fusion、代码生成和 runtime wrapper
+```
+
+官方源码中的核心关系可以概括为：Inductor IR 是执行 lowering 代码产生的；每个 lowering
+通常注册到某个 ATen 算子，并接收符合 ATen schema 的输入。
+
+### 2. lowering 和 decomposition、Codegen 的边界
+
+这几个词处在不同阶段，不能混用：
+
+| 阶段 | 输入 | 输出 | 主要问题 |
+|---|---|---|---|
+| decomposition | 一个高层/复合算子 | 多个语义等价的 ATen 算子 | 这个算子能否改写成后端认识的基础算子？ |
+| lowering | 一个 ATen/FX 节点 | Inductor IR 或 extern/template 节点 | 这个节点在 Inductor 中如何表达和调度？ |
+| scheduling/fusion | 多个 IR 节点 | 可执行的调度组 | 哪些节点放在同一个 kernel，采用什么布局和并行策略？ |
+| Codegen | 调度组和设备信息 | AscendC kernel、host wrapper、launch 逻辑 | 如何生成目标 NPU 可执行代码？ |
+
+例如 `silu` 的处理可能是：
+
+```text
+aten.silu(x)
+    ↓ decomposition
+neg(x) + exp(x) + add(1) + reciprocal/mul
+    ↓ lowering
+多个 Pointwise IR 节点
+    ↓ scheduler/fusion
+一个融合的计算组
+    ↓ AscendC Codegen
+一个 NPU Kernel
+```
+
+如果后端本身有高效的 `silu` 原生实现，也可能不做 decomposition，而是直接把
+`aten.silu` lowering 成一个 extern/template 节点。前一种方案通常更容易复用通用融合能力，
+后一种方案可能保留硬件厂商提供的融合指令或更好的数值实现。
+
+### 3. 常见 lowering 类型
+
+#### 3.1 Pointwise lowering
+
+加法、乘法、比较、`relu`、`exp` 等逐元素操作通常可以 lowering 成 Pointwise IR。Pointwise
+IR 记录索引映射和表达式，后续 scheduler 可以将多个逐元素节点合并，减少 kernel launch
+和中间 tensor。
+
+#### 3.2 Reduction lowering
+
+`sum`、`mean`、`amax`、`softmax` 中的归约部分需要表达归约维度、初始值、累积 dtype 和
+输出布局。NPU backend 还要考虑归约轴是否连续、是否对齐、是否支持动态长度，以及是否需要
+临时 workspace。
+
+#### 3.3 矩阵/模板/Extern lowering
+
+`mm`、`bmm`、`matmul`、卷积、attention 等算子可能被 lowering 成矩阵乘模板、专用模板或
+`ExternKernel`。这类节点通常由 NPU 厂商库、AscendC 模板或 AutoFuse 负责具体实现，
+Inductor 主要负责参数、布局、依赖和调用包装。
+
+#### 3.4 Layout、copy 和 device-specific lowering
+
+`to`、`_to_copy`、reshape、view、contiguous 等操作不一定产生真正的计算 kernel，但会影响
+存储布局、stride、dtype 和设备转换。NPU lowering 需要判断转换是否可以消除、是否能与前后
+算子融合，以及是否会引入额外的搬运 kernel。
+
+### 4. 为什么 lowering 很容易成为 NPU 编译问题的根源
+
+一个算子“语义上支持”并不等于“可以成功 lowering”。lowering 还必须满足以下约束：
+
+- **dtype**：例如 `float16`、`bfloat16`、`float32`、`int8` 的输入和累积精度组合是否被支持；
+- **shape**：维度是否静态、是否为 0/1、是否满足硬件 tile 对齐，动态符号能否传递到模板；
+- **layout/stride**：输入是否 contiguous，转置视图是否支持，输出 layout 是否能被下游消费；
+- **device**：所有输入和常量是否位于 NPU，是否混入 CPU scalar 或 CPU tensor；
+- **alias/mutation**：原地写、视图、存储别名是否能安全表示；
+- **版本和 SoC**：某个 AscendC 指令、模板或 runtime API 是否只在特定 CANN/芯片版本存在。
+
+因此日志中出现 `LoweringException`、`NotImplementedError` 或模板选择失败时，问题通常发生
+在“ATen 节点 → Inductor IR/Extern 节点”的阶段，不能直接归因于最终 AscendC kernel 的运行时
+错误。反过来，lowering 成功但 kernel 编译失败，则应继续检查 AscendC 编译器、头文件、CANN
+版本和生成的 wrapper。
+
+### 5. lowering 问题的定位方法
+
+遇到某个算子编译失败时，可以按下面的顺序缩小范围：
+
+1. 从错误栈中确认具体 `target`，例如 `aten.foo.default`，不要只看最外层的
+   `torch.compile` 异常；
+2. 记录该节点的输入 shape、dtype、device、layout/stride 以及动态 shape 约束；
+3. 分别测试 eager、`backend="eager"`、普通 Inductor 和 `npu_backend="ascendc"`，判断问题
+   出现在 Dynamo、Inductor 通用 lowering 还是 NPU-specific lowering；
+4. 临时打开或关闭对应 decomposition，比较“直接 lowering 原算子”和“分解后 lowering 基础算子”
+   的结果；
+5. 查找 NPU backend 中该 ATen 算子的 lowering 注册、shape/dtype 分支和 extern kernel 声明；
+6. 用最小输入构造单算子复现，再逐步加回 layout、动态 shape、autocast、梯度和融合上下文。
+
+一个实用判断是：如果去掉前后节点后单个算子仍无法生成 IR，优先查 lowering；如果单算子可以，
+但与邻居融合或特定 layout 组合失败，则继续查 scheduler、fusion 和 layout propagation。
+
+## 四、fallback 是什么
+
+### 1. 总体定义
+
+`fallback` 的意思是：当前编译层无法为某个节点或某段代码生成目标后端的优化实现，于是把它
+交给另一条可执行路径。这个“另一条路径”可能是 eager dispatcher、厂商 extern kernel、
+CPU 实现、原始 Python 代码，具体取决于 fallback 发生在哪一层。
+
+fallback 的关键不是“报错”，而是“继续执行但绕开当前优化路径”。因此它既可能是有意设计的
+兼容机制，也可能是性能问题的隐性来源。
+
+### 2. 三种经常被混淆的 fallback
+
+#### 2.1 Dynamo graph break：退出编译图，回到 eager
+
+Dynamo 在遇到无法追踪的 Python 控制流、数据依赖的 `item()`、不支持的对象操作或其他捕获
+限制时，会发生 graph break：
+
+```text
+Python 函数
+  ├─ 可捕获的 Tensor 区域 ──> FX 图 ──> Inductor 编译
+  ├─ graph break 区域 ─────> eager/Python 执行
+  └─ 后续可捕获区域 ───────> 可能再次形成 FX 图
+```
+
+这不是 Inductor 的“单个算子 fallback”，而是 Dynamo 在 Python 前端切断图边界。它会减少可
+融合范围，增加编译函数调用和同步机会。调试时可用 `fullgraph=True` 把 graph break 变成错误，
+从而强制定位断点；生产环境不应把 `torch._dynamo.config.suppress_errors=True` 当作修复方案，
+否则编译失败可能静默退回 eager。
+
+#### 2.2 Inductor extern/custom op：图还在，但节点变成不透明调用
+
+如果 Inductor 没有通用 lowering，或者后端希望使用厂商优化实现，可以把节点保留为
+`ExternKernel`、custom op 或 vendor library call：
+
+```text
+FX 节点 → 不做通用 IR lowering
+       → ExternKernel / torch.library custom op
+       → NPU runtime 调用 AscendC 或厂商库
+```
+
+这种方式仍然属于编译图的一部分，通常不会像 graph break 那样回到 Python；但该节点对
+Inductor 来说是“黑盒”，前后 pointwise 节点往往不能跨过它融合。若要让它可靠参与
+`torch.compile`，通常还需要注册正确的设备 kernel、fake/meta 实现（用于形状和 dtype 推导）、
+必要的 autograd 规则，并准确声明 aliasing/mutation。
+
+#### 2.3 Dispatcher/device fallback：落到其他 dispatch 实现或设备
+
+PyTorch dispatcher 可以为某个 device 注册全局或按算子的 fallback。NPU 缺少某个算子的实现
+时，可能选择 CPU fallback 或其他 dispatch key 的实现；这与 Inductor 的 extern kernel 不是
+一回事：前者是 dispatcher 在算子分发阶段换实现，后者是编译器显式生成的外部调用。
+
+```text
+NPU aten.foo
+    ↓ 没有 NPU kernel
+dispatcher fallback
+    ├─ fallthrough 到其他 dispatch key
+    ├─ 调用 CPU/通用实现（可能发生设备拷贝）
+    └─ 抛出错误
+```
+
+CPU fallback 可能触发 NPU→CPU 和 CPU→NPU 拷贝、同步，甚至破坏异步执行；如果只观察最终
+loss，往往不容易发现。因此训练热路径不应默认接受隐式 CPU fallback。
+
+### 3. fallback 与 decomposition 的关系
+
+两者都可以用来“绕开后端不支持”，但代价完全不同：
+
+```text
+高层算子不支持
+    ├─ 有可用 decomposition
+    │    └─ 改写成基础算子 → lowering → 仍可调度/融合
+    └─ 没有可靠 decomposition
+         ├─ 有厂商实现 → ExternKernel/custom op → 图内黑盒调用
+         └─ 没有实现 → graph break/eager 或 device fallback
+```
+
+优先级通常是：先确认是否存在数值等价且性能可接受的 decomposition；否则选择明确的
+NPU extern/custom op；最后才允许 graph break 或 CPU fallback。分解会增加 IR 节点和编译工作，
+但仍保留优化空间；fallback 则通常牺牲融合、设备一致性或编译可预测性。
+
+### 4. fallback 的性能、正确性和可维护性风险
+
+| 风险 | 具体表现 | NPU 上的典型后果 |
+|---|---|---|
+| kernel/调用开销 | 黑盒节点或断图使算子无法融合 | launch 次数增加，短算子占比变高 |
+| 同步与拷贝 | CPU fallback 需要跨设备搬运 | NPU pipeline 被打断，出现 D2H/H2D |
+| layout/dtype | 外部实现要求不同布局或精度 | 额外 transpose/cast，甚至结果精度变化 |
+| autograd | 只注册 forward，没有 backward/fake 实现 | 训练编译失败或梯度路径回 eager |
+| alias/mutation | 未正确描述视图和原地写 | 结果错误、缓存复用失效或出现隐蔽 bug |
+| 动态 shape | fallback 路径不能表达符号 shape | 频繁重新编译或退回 eager |
+| 可观测性 | fallback 没有明确告警 | 性能下降但难以从 loss 判断原因 |
+
+### 5. 如何确认到底发生了哪种 fallback
+
+建议同时看编译日志、FX/IR 和设备侧 profiler，而不要只根据“程序没有报错”判断：
+
+1. **确认是否 graph break**：使用 `torch._dynamo.explain` 或编译日志查看 break reason；
+   必要时用 `fullgraph=True` 让第一个断点直接报错。相关 API 属于调试接口，具体日志开关随
+   PyTorch 版本变化，应以当前版本文档为准；
+2. **确认是否 extern/custom op**：检查生成的 Inductor IR/代码中是否出现 `ExternKernel`、
+   custom operator 或 vendor library call，并确认该节点前后是否仍能 fusion；
+3. **确认是否 CPU/device fallback**：在 profiler 中查找 CPU 算子、D2H/H2D、同步和异常的
+   host time；同时检查该算子的 dispatcher 注册表和 NPU kernel 是否存在；
+4. **对照运行**：比较 eager、普通 Inductor、AscendC backend 三种结果的数值、kernel 数量、
+   step time 和峰值显存；
+5. **最小化复现**：将可疑算子单独放在 NPU 上运行，再逐步加入动态 shape、autocast、梯度、
+   view/原地写和上下文融合，确定触发 fallback 的最小条件。
+
+### 6. NPU 项目的 fallback 使用原则
+
+建议把 fallback 当作显式的兼容策略管理，而不是默认的“兜底开关”：
+
+1. 核心训练热路径（attention、MLP、通信、归一化和 optimizer step）禁止无告警的 CPU fallback；
+2. 冷路径或控制流算子可以允许 graph break，但要记录发生位置和预期频率；
+3. 能用基础 ATen 算子表达时，优先评估 decomposition，并用精度和性能基准验证；
+4. 必须使用厂商实现时，使用 `torch.library` 定义 custom op，并补齐 kernel、fake/meta、
+   autograd 与 alias/mutation 契约；
+5. 在 CI 或 profiling 中把 fallback 当作可观测指标，避免 CANN、PyTorch 或 torch_npu 升级后
+   出现静默回退；
+6. 临时使用 suppress errors 只用于收集兼容性信息，定位完成后应恢复为显式报错或明确的
+   fallback 白名单。
+
+### 7. 一个简化的决策树
+
+```text
+某个 FX/ATen 节点无法编译
+        ↓
+是否存在数值等价的 decomposition？
+        ├─ 是 → 分解 → 基础算子 lowering → 调度/融合 → NPU Codegen
+        └─ 否
+             ↓
+        是否有 NPU extern/custom op？
+             ├─ 是 → 图内黑盒调用 → 检查 fake/autograd/布局和性能
+             └─ 否
+                  ↓
+        是否允许该区域 graph break？
+             ├─ 是 → eager 执行 → 记录断图和同步代价
+             └─ 否 → 显式报错，补充 lowering 或 NPU kernel
+```
+
+## 五、component 是什么
 
 ### 1. 定义
 
@@ -398,15 +655,18 @@ npu_backend
     Inductor 内部如何生成 NPU Kernel
 ```
 
-## 四、最终记忆方式
+## 六、最终记忆方式
 
 ```text
 component：编译哪一块？
 backend：整张图交给谁？
 decomposition：图里的高层算子如何展开？
+lowering：每个 FX/ATen 节点如何变成 Inductor IR 或 extern 节点？
+fallback：无法编译时，是留在图内、断图执行，还是落到其他设备？
 npu_backend：Inductor 最终如何生成 NPU Kernel？
 ```
 
 一句话总结：
 
-> `component` 决定编译范围；Dynamo backend 决定整图编译入口；decomposition 决定算子图如何改写；NPU Codegen 决定最终的 NPU Kernel 如何生成。
+> `component` 决定编译范围；Dynamo backend 决定整图编译入口；decomposition 决定算子图如何改写；
+> lowering 决定节点如何落到 Inductor IR；fallback 决定不支持路径如何继续执行；NPU Codegen 决定最终的 NPU Kernel 如何生成。

@@ -515,6 +515,9 @@ NpuSwigluGroupConverter 只允许 A5。非 A5 时在导入 CANN 算子前抛出 
 
 ## 8. torch.compile 与 activation checkpointing
 
+本文涉及 activation-only compile；关于 Dynamo backend、Inductor 内部 NPU Codegen、decomposition
+和 TorchTitan `component` 的分层说明，参见 [[PyTorch编译问题总结：Dynamo、Inductor与NPU Codegen]]。
+
 ### 8.1 activation-only compile
 
 gmm.py 只编译两次 GMM 中间的 activation bridge：

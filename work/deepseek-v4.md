@@ -2,6 +2,8 @@
 
 本文只记录在对话中提出的 DeepSeek-V4 相关原始问题及其回答，不回填已有专题笔记。问题编号和块锚点一经创建便不再修改，方便长期引用。
 
+模型整体架构、执行流程、PP/TP/CP/EP 组合以及与其他模型的比较见：[[deepseek-v4-architecture-and-execution]]、[[deepseek-v4-vs-mainstream-architectures]]。
+
 ## 问题索引
 
 - [[#^q001-router|Q001：Router 为每个 token 选择若干专家，并产生 routed score。这其中的 Router 指的是什么，请详细说明一下]]

@@ -26,9 +26,12 @@
 
 ## Concepts
 
+- [[java-programming-in-ai-era]] — AI 编程时代的 Java 必备知识、场景选型、工程底座与学习路线
 - [[linux-debugging-for-npu-adaptation]] — 用 gdb/core、pdb、strace、perf 和 dmesg 按层定位训练崩溃、hang 与 host 性能问题
 - [[cpp-reading-for-pytorch-backends]] — 围绕模板、RAII、智能指针、宏、注册和动态链接读懂 ATen/torch_npu C++ 调用链
 - [[python-advanced-mechanisms-for-pytorch]] — 装饰器、context、hook/override 协议及 Python 跨入 C/C++ 扩展的完整路径
+- [[pipeline-parallel]] — 按层切分模型，用 micro-batch 和 1F1B/Interleaved 调度把大模型流水化
+- [[deepseek-v4-architecture-and-execution]] — DeepSeek-V4 的 mHC、混合注意力、MoE、cache 与 PP/TP/CP/EP 执行流程
 - [[pip-requirements-file-format]] — pip requirements 每行语法、选项作用域、文件拆分、环境变量及常见坑速查
 - [[deep-learning-training-numerics]] — 反向传播、fp16/bf16、AMP、loss scaling 和参数/梯度/优化器/激活显存账本
 - [[floating-point-error-analysis]] — 非结合律、误差累积、条件数、稳定算法，以及 rtol/atol 何时失效、如何组合
@@ -41,6 +44,7 @@
 
 ## Comparisons
 
+- [[deepseek-v4-vs-mainstream-architectures]] — DeepSeek-V4 与 Dense、传统稀疏 MoE、DeepSeek-V3 的架构和工程代价对比
 - [[tp-vs-cp-sharding]] — 切参数 vs 切序列；为什么只有 CP 需要负载均衡
 - [[colwise-vs-rowwise-parallel]] — 必须配对使用，三处不对称容易踩坑
 - [[cp-load-balancers]] — 三种 CP 均衡策略怎么选，整除条件的严格程度差很多

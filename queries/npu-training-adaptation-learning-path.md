@@ -95,7 +95,7 @@ sources:
 | ZeRO / FSDP | 优化器状态 → 梯度 → 参数 | 三个阶段各省多少、各加多少通信 |
 | TP | 权重矩阵 | [[colwise-vs-rowwise-parallel]] 为什么必须配对；[[loss-parallel]] |
 | SP | norm/dropout 的激活 | [[sequence-parallel]]，省的是冗余激活显存 |
-| PP | 层 | 1F1B、interleaved 调度、气泡率怎么算 |
+| PP | 层 | [[pipeline-parallel]]：1F1B、interleaved 调度、气泡率、stage contract |
 | CP | 序列维 | [[cp-sequence-sharding]]、[[ring-attention]]、为什么只有 CP 需要负载均衡（[[tp-vs-cp-sharding]]） |
 | EP / MoE | 专家 | alltoall 的通信量、负载不均、容量因子 |
 

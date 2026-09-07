@@ -55,6 +55,8 @@
 - [[how-does-pytorch-tp-shard-modules]] — PyTorch 的 TP 是怎么切分模块的？
 - [[how-does-pytorch-cp-shard-sequences]] — PyTorch 的 CP 是怎么切分序列的？
 - [[npu-training-adaptation-learning-path]] — NPU 训练适配要学什么、怎么学；护城河是跨层定位，不是会用框架
+- [[queries/ai-infra-capabilities/README]] — 面向 NPU 训练、推理和 Infra 的七类能力学习地图与项目验收
+- [[queries/ai-infra-capabilities/dp-fsdp-zero-ep-parallelism]] — DP、FSDP、ZeRO、EP 与 TP/CP 的统一并行维度对比
 
 ## Raw
 

@@ -260,4 +260,6 @@ GPU 结果对、NPU 结果不对，是这个岗位最常见也最难的问题。
 
 [[linux-debugging-for-npu-adaptation]] · [[cpp-reading-for-pytorch-backends]] · [[python-advanced-mechanisms-for-pytorch]] · [[pip-requirements-file-format]] · [[deep-learning-training-numerics]] · [[floating-point-error-analysis]] · [[tensor-parallel]] · [[context-parallel]] · [[dtensor-placement]] · [[tp-vs-cp-sharding]] · [[SCHEMA]]
 
+扩展学习地图：[[queries/ai-infra-capabilities/README]]（按 C++、体系结构、通信、Kernel、PyTorch 编译、推理引擎和分布式 Infra 拆分，并附项目验收标准）。
+
 待写（本文里提到但还没有笔记的坑）：[[ascend-davinci-architecture]] · [[cann-stack]] · [[torch-dispatcher]] · [[hccl-vs-nccl]] · [[npu-precision-debugging]] · [[ascend-c]] · [[torchair]] · [[pipeline-parallel]] · [[zero-and-fsdp]]

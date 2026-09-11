@@ -3,7 +3,13 @@ title: PyTorch 适配所需的 Python 进阶机制
 type: concept
 created: 2026-07-26
 updated: 2026-08-04
-tags: [python, pytorch, 装饰器, 上下文管理器, torch-function, c-extension]
+tags:
+  - python
+  - pytorch
+  - 装饰器
+  - 上下文管理器
+  - torch-function
+  - c-extension
 sources:
   - https://docs.python.org/3/glossary.html#term-decorator
   - https://docs.python.org/3/reference/datamodel.html#emulating-callable-objects

@@ -1,0 +1,26 @@
+{
+  "id": "conv-1788850741114-1j1x4sk4q",
+  "providerId": "codex",
+  "title": "理解装饰器、callback、hook与registry的共同基础",
+  "titleGenerationStatus": "success",
+  "createdAt": 1788850741115,
+  "updatedAt": 1788851154634,
+  "lastResponseAt": 1788851154634,
+  "sessionId": "01a07fd0-2087-7671-8c9b-7f467ccf2792",
+  "providerState": {
+    "threadId": "01a07fd0-2087-7671-8c9b-7f467ccf2792",
+    "sessionFilePath": "/home/zhangwei/.codex/sessions/2026/09/08/rollout-2026-09-08T15-59-01-01a07fd0-2087-7671-8c9b-7f467ccf2792.jsonl",
+    "transcriptRootPath": "/home/zhangwei/.codex/sessions"
+  },
+  "currentNote": "concepts/python-advanced-mechanisms-for-pytorch.md",
+  "usage": {
+    "inputTokens": 19599,
+    "cacheCreationInputTokens": 0,
+    "cacheReadInputTokens": 17152,
+    "contextWindow": 258400,
+    "contextWindowIsAuthoritative": true,
+    "contextTokens": 19599,
+    "percentage": 8,
+    "model": "gpt-5.6-sol"
+  }
+}

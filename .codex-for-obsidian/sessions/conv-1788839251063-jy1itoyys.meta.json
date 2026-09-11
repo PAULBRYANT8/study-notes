@@ -1,0 +1,14 @@
+{
+  "id": "conv-1788839251063-jy1itoyys",
+  "providerId": "codex",
+  "title": "Respond to greeting",
+  "titleGenerationStatus": "success",
+  "createdAt": 1788839251063,
+  "updatedAt": 1788850657584,
+  "lastResponseAt": 1788839440729,
+  "sessionId": null,
+  "providerState": {
+    "transcriptRootPath": "/home/zhangwei/.codex/sessions"
+  },
+  "currentNote": "work/swiglu-group-接入复盘.md"
+}

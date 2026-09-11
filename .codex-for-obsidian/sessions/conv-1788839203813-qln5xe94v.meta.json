@@ -1,0 +1,13 @@
+{
+  "id": "conv-1788839203813-qln5xe94v",
+  "providerId": "codex",
+  "title": "Identify the current model",
+  "titleGenerationStatus": "success",
+  "createdAt": 1788839203816,
+  "updatedAt": 1788850662822,
+  "lastResponseAt": 1788839583230,
+  "sessionId": null,
+  "providerState": {
+    "transcriptRootPath": "/home/zhangwei/.codex/sessions"
+  }
+}

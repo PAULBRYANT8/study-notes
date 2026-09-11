@@ -1,0 +1,76 @@
+{
+  "userName": "",
+  "permissionMode": "normal",
+  "model": "gpt-5.6-sol",
+  "thinkingBudget": "off",
+  "effortLevel": "high",
+  "serviceTier": "default",
+  "enableAutoTitleGeneration": true,
+  "titleGenerationModel": "",
+  "excludedTags": [],
+  "mediaFolder": "",
+  "systemPrompt": "",
+  "persistentExternalContextPaths": [],
+  "sharedEnvironmentVariables": "",
+  "envSnippets": [
+    {
+      "id": "snippet-1788838248621",
+      "name": "codex-api",
+      "description": "",
+      "envVars": "model_provider = \"OpenAI\"\nmodel = \"gpt-5.6\"\nreview_model = \"gpt-5.6“\ndisable_response_storage = true\nmodel_catalog_json = \"~/.codex/codex-models.json\"\nnetwork_access = \"enabled\"\nwindows_wsl_setup_acknowledged = true\n\n[model_providers.OpenAI]\nname = \"OpenAI\"\nbase_url = \"https://ep.aicorp.work\"\nwire_api = \"responses\"\nrequires_openai_auth = true\n\n[features]\ngoals = true",
+      "scope": "shared"
+    }
+  ],
+  "customContextLimits": {},
+  "keyboardNavigation": {
+    "scrollUpKey": "w",
+    "scrollDownKey": "s",
+    "focusInputKey": "i"
+  },
+  "locale": "zh-CN",
+  "providerConfigs": {
+    "codex": {
+      "enabled": true,
+      "safeMode": "workspace-write",
+      "cliPath": "",
+      "cliPathsByHost": {},
+      "reasoningSummary": "detailed",
+      "environmentVariables": "OPENAI_API_KEY=sk-1b02c45824453d0843dbeeea91360828949ea3b7c1563eea809df40732d40037\nOPENAI_BASE_URL=https://ep.aicorp.work\nOPENAI_MODEL=gpt-5.6-sol",
+      "environmentHash": "OPENAI_API_KEY=sk-1b02c45824453d0843dbeeea91360828949ea3b7c1563eea809df40732d40037|OPENAI_BASE_URL=https://ep.aicorp.work|OPENAI_MODEL=gpt-5.6-sol",
+      "installationMethodsByHost": {
+        "zhangwei-MACHD-WXX9": "native-windows"
+      },
+      "wslDistroOverridesByHost": {}
+    },
+    "claude": {
+      "safeMode": "acceptEdits",
+      "cliPath": "",
+      "cliPathsByHost": {},
+      "loadUserSettings": true,
+      "enableChrome": false,
+      "enableBangBash": false,
+      "enableOpus1M": false,
+      "enableSonnet1M": false,
+      "lastModel": "haiku",
+      "environmentVariables": "",
+      "environmentHash": ""
+    }
+  },
+  "settingsProvider": "codex",
+  "savedProviderModel": {
+    "codex": "gpt-5.6-sol"
+  },
+  "savedProviderEffort": {
+    "codex": "xhigh"
+  },
+  "savedProviderServiceTier": {},
+  "savedProviderThinkingBudget": {
+    "codex": "off"
+  },
+  "lastCustomModel": "",
+  "maxTabs": 3,
+  "tabBarPosition": "input",
+  "enableAutoScroll": true,
+  "openInMainTab": false,
+  "hiddenProviderCommands": {}
+}

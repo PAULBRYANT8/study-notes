@@ -35,8 +35,8 @@
       "cliPath": "",
       "cliPathsByHost": {},
       "reasoningSummary": "detailed",
-      "environmentVariables": "OPENAI_API_KEY=sk-1b02c45824453d0843dbeeea91360828949ea3b7c1563eea809df40732d40037\nOPENAI_BASE_URL=https://ep.aicorp.work\nOPENAI_MODEL=gpt-5.6-sol",
-      "environmentHash": "OPENAI_API_KEY=sk-1b02c45824453d0843dbeeea91360828949ea3b7c1563eea809df40732d40037|OPENAI_BASE_URL=https://ep.aicorp.work|OPENAI_MODEL=gpt-5.6-sol",
+      "environmentVariables": "",
+      "environmentHash": "",
       "installationMethodsByHost": {
         "zhangwei-MACHD-WXX9": "native-windows"
       },

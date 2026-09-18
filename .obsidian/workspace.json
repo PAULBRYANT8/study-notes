@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "work/TorchTitan-NPU-动态量化与模型配置树梳理.md",
-                "mode": "preview",
+                "file": "work/tp_mtp_compile_async_collective_tensor.md",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TorchTitan-NPU-动态量化与模型配置树梳理"
+              "title": "tp_mtp_compile_async_collective_tensor"
             }
           }
         ],
@@ -95,7 +95,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 278.234375
+    "width": 278.234375,
+    "collapsed": true
   },
   "right": {
     "id": "e995bd9c64e4aa41",
@@ -197,7 +198,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 738.27734375
+    "width": 583.25
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -213,8 +214,10 @@
   },
   "active": "aa09c86fea7c7221",
   "lastOpenFiles": [
-    "concepts/python-advanced-mechanisms-for-pytorch.md",
+    "work/DeepSeek-2026 CP 切分设计方案.md",
+    "work/2026-09-18-TorchTitan-NPU-会话学习总结.md",
     "work/TorchTitan-NPU-动态量化与模型配置树梳理.md",
+    "concepts/python-advanced-mechanisms-for-pytorch.md",
     "log.md",
     "concepts/linux-debugging-for-npu-adaptation.md",
     "queries/ai-infra-capabilities/accelerator-architecture.md",
@@ -237,8 +240,6 @@
     "comparisons/cp-load-balancers.md",
     "comparisons/colwise-vs-rowwise-parallel.md",
     "comparisons/allgather-vs-alltoall-kv-rotation.md",
-    "index.md",
-    "concepts/java-programming-in-ai-era.md",
     "raw/2026-07-30-deepseekmoe.html",
     "raw/2026-07-30-deepseekmoe.pdf",
     "docs/superpowers/plans",

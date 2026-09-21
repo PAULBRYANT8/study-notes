@@ -1,9 +1,9 @@
 {
   "userName": "",
   "permissionMode": "normal",
-  "model": "gpt-5.6-sol",
+  "model": "gpt-5.5",
   "thinkingBudget": "off",
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "serviceTier": "default",
   "enableAutoTitleGeneration": true,
   "titleGenerationModel": "",
@@ -58,7 +58,7 @@
   },
   "settingsProvider": "codex",
   "savedProviderModel": {
-    "codex": "gpt-5.6-sol"
+    "codex": "gpt-5.5"
   },
   "savedProviderEffort": {
     "codex": "xhigh"

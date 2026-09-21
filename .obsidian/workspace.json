@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "work/tp_mtp_compile_async_collective_tensor.md",
+                "file": "work/量化基础与DeepSeek-V4-MX权重加载-PR813.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "tp_mtp_compile_async_collective_tensor"
+              "title": "量化基础与DeepSeek-V4-MX权重加载-PR813"
             }
           }
         ],
@@ -198,7 +198,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 583.25
+    "width": 459.8828125
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -214,6 +214,8 @@
   },
   "active": "aa09c86fea7c7221",
   "lastOpenFiles": [
+    "work/tp_mtp_compile_async_collective_tensor.md",
+    "work/量化基础与DeepSeek-V4-MX权重加载-PR813.md",
     "work/DeepSeek-2026 CP 切分设计方案.md",
     "work/2026-09-18-TorchTitan-NPU-会话学习总结.md",
     "work/TorchTitan-NPU-动态量化与模型配置树梳理.md",
@@ -231,7 +233,6 @@
     "comparisons/README.md",
     "work/dsv4-2026-05-log-analysis.md",
     "work/dsv4_pp.md",
-    "work/tp_mtp_compile_async_collective_tensor.md",
     "work/PR376_description.md",
     "work/dsv4_pp_hc_head_norm重构_20260529.md",
     "comparisons/deepseek-v4-vs-mainstream-architectures.md",
@@ -239,7 +240,6 @@
     "concepts/pipeline-parallel.md",
     "comparisons/cp-load-balancers.md",
     "comparisons/colwise-vs-rowwise-parallel.md",
-    "comparisons/allgather-vs-alltoall-kv-rotation.md",
     "raw/2026-07-30-deepseekmoe.html",
     "raw/2026-07-30-deepseekmoe.pdf",
     "docs/superpowers/plans",

@@ -1,0 +1,26 @@
+{
+  "id": "conv-1789716954720-fml2u50yz",
+  "providerId": "codex",
+  "title": "解释 grouped_mm 的最后一维与 -1 轴",
+  "titleGenerationStatus": "success",
+  "createdAt": 1789716954721,
+  "updatedAt": 1789724316618,
+  "lastResponseAt": 1789717617181,
+  "sessionId": "01a0b371-879c-7833-814c-143adfbc9ef4",
+  "providerState": {
+    "threadId": "01a0b371-879c-7833-814c-143adfbc9ef4",
+    "sessionFilePath": "/home/zhangwei/.codex/sessions/2026/09/18/rollout-2026-09-18T16-35-57-01a0b371-879c-7833-814c-143adfbc9ef4.jsonl",
+    "transcriptRootPath": "/home/zhangwei/.codex/sessions"
+  },
+  "currentNote": "work/2026-09-18-TorchTitan-NPU-会话学习总结.md",
+  "usage": {
+    "inputTokens": 32750,
+    "cacheCreationInputTokens": 0,
+    "cacheReadInputTokens": 27008,
+    "contextWindow": 200000,
+    "contextWindowIsAuthoritative": false,
+    "contextTokens": 32750,
+    "percentage": 16,
+    "model": "gpt-5.5"
+  }
+}

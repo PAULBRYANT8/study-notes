@@ -214,6 +214,7 @@
   },
   "active": "aa09c86fea7c7221",
   "lastOpenFiles": [
+    "work/2026-09-22-compressor-cp-design.md",
     "work/tp_mtp_compile_async_collective_tensor.md",
     "work/量化基础与DeepSeek-V4-MX权重加载-PR813.md",
     "work/DeepSeek-2026 CP 切分设计方案.md",
@@ -239,7 +240,6 @@
     "concepts/deepseek-v4-architecture-and-execution.md",
     "concepts/pipeline-parallel.md",
     "comparisons/cp-load-balancers.md",
-    "comparisons/colwise-vs-rowwise-parallel.md",
     "raw/2026-07-30-deepseekmoe.html",
     "raw/2026-07-30-deepseekmoe.pdf",
     "docs/superpowers/plans",

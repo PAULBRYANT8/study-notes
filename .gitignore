@@ -1,2 +1,12 @@
 .claude/
 .opencode/
+
+# Local document editing tools and previews
+/.tmp_resume_update/
+/.tmp_resume_update_tools/
+/debug.log
+/resume/~$*
+/resume/*.tmp
+
+# Local plugin settings may contain login credentials
+/.obsidian/plugins/ai-chat-sidebar/data.json

@@ -428,13 +428,11 @@ Inductor 主要负责参数、布局、依赖和调用包装。
 2. 记录该节点的输入 shape、dtype、device、layout/stride 以及动态 shape 约束；
 3. 分别测试 eager、`backend="eager"`、普通 Inductor 和 `npu_backend="ascendc"`，判断问题
    出现在 Dynamo、Inductor 通用 lowering 还是 NPU-specific lowering；
-4. 临时打开或关闭对应 decomposition，比较“直接 lowering 原算子”和“分解后 lowering 基础算子”
-   的结果；
+4. 临时打开或关闭对应 decomposition，比较“直接 lowering 原算子”和“分解后 lowering 基础算子”的结果；
 5. 查找 NPU backend 中该 ATen 算子的 lowering 注册、shape/dtype 分支和 extern kernel 声明；
 6. 用最小输入构造单算子复现，再逐步加回 layout、动态 shape、autocast、梯度和融合上下文。
 
-一个实用判断是：如果去掉前后节点后单个算子仍无法生成 IR，优先查 lowering；如果单算子可以，
-但与邻居融合或特定 layout 组合失败，则继续查 scheduler、fusion 和 layout propagation。
+一个实用判断是：如果去掉前后节点后单个算子仍无法生成 IR，优先查 lowering；如果单算子可以，但与邻居融合或特定 layout 组合失败，则继续查 scheduler、fusion 和 layout propagation。
 
 ## 四、fallback 是什么
 
@@ -519,15 +517,15 @@ NPU extern/custom op；最后才允许 graph break 或 CPU fallback。分解会�
 
 ### 4. fallback 的性能、正确性和可维护性风险
 
-| 风险 | 具体表现 | NPU 上的典型后果 |
-|---|---|---|
-| kernel/调用开销 | 黑盒节点或断图使算子无法融合 | launch 次数增加，短算子占比变高 |
-| 同步与拷贝 | CPU fallback 需要跨设备搬运 | NPU pipeline 被打断，出现 D2H/H2D |
-| layout/dtype | 外部实现要求不同布局或精度 | 额外 transpose/cast，甚至结果精度变化 |
-| autograd | 只注册 forward，没有 backward/fake 实现 | 训练编译失败或梯度路径回 eager |
-| alias/mutation | 未正确描述视图和原地写 | 结果错误、缓存复用失效或出现隐蔽 bug |
-| 动态 shape | fallback 路径不能表达符号 shape | 频繁重新编译或退回 eager |
-| 可观测性 | fallback 没有明确告警 | 性能下降但难以从 loss 判断原因 |
+| 风险             | 具体表现                            | NPU 上的典型后果                  |
+| -------------- | ------------------------------- | --------------------------- |
+| kernel/调用开销    | 黑盒节点或断图使算子无法融合                  | launch 次数增加，短算子占比变高         |
+| 同步与拷贝          | CPU fallback 需要跨设备搬运            | NPU pipeline 被打断，出现 D2H/H2D |
+| layout/dtype   | 外部实现要求不同布局或精度                   | 额外 transpose/cast，甚至结果精度变化  |
+| autograd       | 只注册 forward，没有 backward/fake 实现 | 训练编译失败或梯度路径回 eager          |
+| alias/mutation | 未正确描述视图和原地写                     | 结果错误、缓存复用失效或出现隐蔽 bug        |
+| 动态 shape       | fallback 路径不能表达符号 shape         | 频繁重新编译或退回 eager             |
+| 可观测性           | fallback 没有明确告警                 | 性能下降但难以从 loss 判断原因          |
 
 ### 5. 如何确认到底发生了哪种 fallback
 

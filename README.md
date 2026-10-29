@@ -9,7 +9,7 @@
 | 想了解什么 | 从这里开始 |
 | --- | --- |
 | batch、BSD、Q/K/V、张量显存与 FlashAttention 等基础问题 | [个人学习笔记：查询内容记录](个人学习笔记/查询内容记录.md) |
-| CP、PP、融合算子、RoPE 与量化权重加载项目需要哪些知识 | [项目上下游知识体系与学习路线](work/简历四项项目-上下游知识体系与学习路线.md) |
+| CP、PP、融合算子、RoPE 与量化权重加载项目需要哪些知识 | [[简历四项项目-上下游知识体系与学习路线\|项目上下游知识体系与学习路线]] |
 | AI Infra 的能力分类、学习顺序与实践方向 | [AI Infra 七类能力学习地图](queries/ai-infra-capabilities/README.md) |
 | 模型组件怎样连接成完整的训练与推理流程 | [DeepSeek-V4 模型结构与执行流程](concepts/deepseek-v4-architecture-and-execution.md) |
 | 反向传播、混合精度、数值误差与训练显存 | [训练数值与显存账本](concepts/deep-learning-training-numerics.md)、[浮点误差分析](concepts/floating-point-error-analysis.md) |

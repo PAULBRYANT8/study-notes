@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "work/deepseek-v4.md",
+                "file": "work/training&inference/deepseek-v4.md",
                 "mode": "preview",
                 "source": false
               },
@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "concepts/python-advanced-mechanisms-for-pytorch.md",
-                "mode": "source",
+                "file": "work/isp/Verilog零基础入门与菜鸟教程知识梳理.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "python-advanced-mechanisms-for-pytorch"
+              "title": "Verilog零基础入门与菜鸟教程知识梳理"
             }
           },
           {
@@ -109,7 +109,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 471.91796875
+    "width": 200
   },
   "right": {
     "id": "e995bd9c64e4aa41",
@@ -125,7 +125,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "work/swiglu-group-接入复盘.md",
+                "file": "work/training&inference/swiglu-group-接入复盘.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -187,7 +187,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "work/swiglu-group-接入复盘.md",
+                "file": "work/training&inference/swiglu-group-接入复盘.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -226,28 +226,28 @@
       "codex-for-obsidian:Open Codex for Obsidian": false
     }
   },
-  "active": "0b523f717c55ccc1",
+  "active": "11d1a4e937317396",
   "lastOpenFiles": [
+    "concepts/python-advanced-mechanisms-for-pytorch.md",
     "log.md",
-    "work/DeepSeek-2026 CP 切分设计方案.md",
+    "work/training&inference/DeepSeek-2026 CP 切分设计方案.md",
     "AGENTS.md",
-    "work/deepseek-v4.md",
-    "work/2026-09-18-TorchTitan-NPU-会话学习总结.md",
+    "work/training&inference/deepseek-v4.md",
+    "work/training&inference/2026-09-18-TorchTitan-NPU-会话学习总结.md",
     "个人学习笔记/查询内容记录.md",
-    "work/inplace-partial-rotary-mul-接入介绍.md",
-    "work/PyTorch编译问题总结：Dynamo、Inductor与NPU Codegen.md",
-    "work/TorchTitan-NPU-动态量化与模型配置树梳理.md",
-    "work/SwigluGroup-融合算子接入介绍.md",
-    "work/swiglu-group-接入复盘.md",
-    "work/量化基础与DeepSeek-V4-MX权重加载-PR813.md",
-    "work/inplace-partial-rotary-mul-接入复盘.md",
+    "work/training&inference/inplace-partial-rotary-mul-接入介绍.md",
+    "work/training&inference/PyTorch编译问题总结：Dynamo、Inductor与NPU Codegen.md",
+    "work/training&inference/TorchTitan-NPU-动态量化与模型配置树梳理.md",
+    "work/training&inference/SwigluGroup-融合算子接入介绍.md",
+    "work/training&inference/swiglu-group-接入复盘.md",
+    "work/training&inference/量化基础与DeepSeek-V4-MX权重加载-PR813.md",
+    "work/training&inference/inplace-partial-rotary-mul-接入复盘.md",
     "concepts/deep-learning-training-numerics.md",
     "未命名.md",
     "未命名.base",
-    "work/简历四项项目-上下游知识体系与学习路线.md",
-    "work/2026-09-22-compressor-cp-design.md",
-    "work/tp_mtp_compile_async_collective_tensor.md",
-    "concepts/python-advanced-mechanisms-for-pytorch.md",
+    "work/training&inference/简历四项项目-上下游知识体系与学习路线.md",
+    "work/training&inference/2026-09-22-compressor-cp-design.md",
+    "work/training&inference/tp_mtp_compile_async_collective_tensor.md",
     "concepts/linux-debugging-for-npu-adaptation.md",
     "queries/ai-infra-capabilities/accelerator-architecture.md",
     "queries/ai-infra-capabilities/dp-fsdp-zero-ep-parallelism.md",

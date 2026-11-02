@@ -514,3 +514,335 @@ $$
 - 模块和进阶：[5.1 模块与端口](https://www.runoob.com/w3cnote/verilog-module-port.html)、[5.2 模块例化](https://www.runoob.com/w3cnote/verilog-generate.html)、[5.3 参数例化](https://www.runoob.com/w3cnote/verilog-defparam.html)；[6.1 函数](https://www.runoob.com/w3cnote/verilog-function.html)、[6.2 任务](https://www.runoob.com/w3cnote/verilog-task.html)、[6.3 状态机](https://www.runoob.com/w3cnote/verilog-fsm.html)、[6.4 竞争与冒险](https://www.runoob.com/w3cnote/verilog-competition-hazard.html)、[6.5 避免 latch](https://www.runoob.com/w3cnote/verilog-latch.html)、[6.6 仿真激励](https://www.runoob.com/w3cnote/verilog-testbench.html)、[6.7 流水线](https://www.runoob.com/w3cnote/verilog-pipeline-design.html)。
 - 实例与数值：[7.1 除法器](https://www.runoob.com/w3cnote/verilog-dividend.html)、[7.2 并行 FIR](https://www.runoob.com/w3cnote/verilog-fir.html)、[7.3 串行 FIR](https://www.runoob.com/w3cnote/verilog-serial-fir.html)、[7.4 CIC](https://www.runoob.com/w3cnote/verilog-cic.html)、[7.5 FFT](https://www.runoob.com/w3cnote/verilog-fft.html)、[7.6 DDS](https://www.runoob.com/w3cnote/verilog-dds.html)、[8.1 数值转换](https://www.runoob.com/w3cnote/verilog-numerical-conversion.html)。
 - 另有独立的 [Verilog 高级篇](https://www.runoob.com/w3cnote/verilog2-tutorial.html)，涉及门级建模、用户自定义原语、时序分析、同步与异步、复位与时钟、低功耗、系统任务、PLI 和逻辑综合。适合掌握本文基础后按需继续学习，不属于本文逐章总结范围。
+
+## 11. 会话问题补充：从代码理解 Verilog
+
+本节整理创建本文后继续讨论的问题。代码以 Verilog-2001/2005 为主；标为“片段”的例子需要放进对应模块，不能独立编译。本节没有把不可访问的视频内容当作事实，具体限制见 11.13。
+
+### 11.1 RTL 是什么？组合逻辑与时序逻辑如何配合？
+
+RTL（Register-Transfer Level，寄存器传输级）用寄存器保存状态，用组合逻辑描述输入或寄存器之间的数据计算，并描述状态何时更新。它是一种电路描述层次；Verilog 是可用于编写 RTL 的语言，Verilog 也能写仅供仿真的 testbench。
+
+```verilog
+module add_reg (
+    input  wire       clk,
+    input  wire       rst_n,
+    input  wire [7:0] a, b,
+    output reg  [8:0] result
+);
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            result <= 9'd0;
+        else
+            result <= {1'b0, a} + {1'b0, b};
+    end
+endmodule
+```
+
+`{1'b0, a}` 将 8 位 `a` 扩展为 9 位，以容纳最大值 $255+255=510$。代码描述加法组合逻辑以及保存结果的寄存器：上升沿采样时输入为 3、5，更新后 `result` 为 8；之后输入变化，`result` 会保持到下一次采样或复位。`rst_n` 下降沿可立即触发低有效异步复位，复位释放仍需满足实际时序要求。
+
+**组合逻辑**的稳定输出由当前输入决定，如加法器、多路选择器、比较器；输入变化后有实际传播延迟，但不需要等待时钟。**时序逻辑**包含可保存状态的结构，输出或下一状态依赖历史状态，如计数器、寄存器、状态机、流水线。同步触发器通常在时钟边沿更新；锁存器则是电平敏感的，不能把所有存储单元都描述成边沿触发。
+
+例如 `count <= count + 1'b1` 同时涉及保存旧值的寄存器和计算下一值的组合加法器。ISP 中的像素计算、比较或选择常有组合部分，像素、坐标、行帧标记、`valid` 的保存和对齐常需要时序部分。
+
+### 11.2 全加器 testbench：拼接、延时和并发
+
+标准全加器有输入 `Ai`、`Bi`、`Ci`，分别是两个加数和进位输入；输出 `So` 为和的最低位、`Co` 为进位。组合逻辑可表达为：
+
+```verilog
+assign So = Ai ^ Bi ^ Ci;
+assign Co = (Ai & Bi) | (Ai & Ci) | (Bi & Ci);
+```
+
+例如 `1+1+0` 的二进制结果是 `10`，所以 `Co=1`、`So=0`。结果要以被测 `full_adder1` 的实际定义为准，下面只是针对标准全加器解释测试平台。
+
+```verilog
+`timescale 1ns/1ns
+module tb_adder;
+    reg Ai, Bi, Ci;
+    wire So, Co;
+
+    initial begin
+        {Ai, Bi, Ci} = 3'b000;
+        forever begin
+            #10;
+            {Ai, Bi, Ci} = {Ai, Bi, Ci} + 1'b1;
+        end
+    end
+
+    full_adder1 dut (.Ai(Ai), .Bi(Bi), .Ci(Ci), .So(So), .Co(Co));
+
+    initial begin
+        #1000;
+        $finish;
+    end
+endmodule
+```
+
+`{Ai, Bi, Ci}` 是拼接，把三个 1 位信号作为一个 3 位数；写在赋值左边时将结果依次拆给三个信号。输入从 0 ns 的 `000` 开始，每 10 ns 加一，依次为 `001`、`010`、……、`111`；80 ns 时 `111+1` 的第 4 位被截掉，回到 `000`。这覆盖了所有八种输入组合。两个 `initial` 并发工作，第二个用于结束仿真。恰在 1000 ns 时输入更新和 `$finish` 同时发生，不能依赖不同过程的执行顺序；前 80 ns 已覆盖全部输入。该平台本身没有自动对照真值表，仍需波形或自检。
+
+### 11.3 连续赋值时延：为何短脉冲消失？
+
+问题中的模块假设时间单位都是 1 ns：
+
+```verilog
+assign #20 so_lose   = ai & bi;
+assign #5  so_get    = ai & bi;
+assign     so_normal = ai & bi;
+```
+
+来自 testbench 的 `ai` 在 25、60、100、110 ns 改变；`bi` 在 70、90 ns 改变。把输入合起来，`ai & bi` 有两段高电平：25～60 ns，持续 35 ns；100～110 ns，持续 10 ns。70 和 90 ns 虽然 `bi` 改变，但 `ai` 为 0，与运算结果没有改变。
+
+- `so_normal` 没有显式时延，两个高脉冲分别在 25～60 ns、100～110 ns（同一仿真时刻内仍有事件更新）。
+- `so_get` 延迟 5 ns，脉冲分别为 30～65 ns、105～115 ns。
+- `so_lose` 延迟 20 ns：第一段持续 35 ns，输出为 45～80 ns。第二段仅持续 10 ns；100 ns 安排的 120 ns 上升变化，在输入 110 ns 恢复前值时被惯性延迟机制取消，因此 `so_lose` 从 80 ns 起保持 0。
+
+连续赋值的时延用于仿真建模，不应当作综合后真实硬件延迟的通用指定方法。若第二个脉冲宽度**恰好等于**延迟，同一仿真时刻的调度可能影响观察，不能简单套用短于或长于延迟的结论。`timescale` 必须对被测模块也适用，不能仅由 testbench 当然推断。
+
+### 11.4 阻塞、非阻塞与同一仿真时间的后续更新
+
+同一个 `begin ... end` 内的语句按顺序执行。`=` 立即更新左值；无显式时延的 `<=` 在执行到语句时计算右值，并安排当前仿真时刻的后续非阻塞赋值（NBA）阶段更新左值。
+
+```verilog
+// 假设 20 ns 之前 ai2=7、bi2=8
+ai         = 4'd3;
+bi         = 4'd4;
+value_blk  = ai + bi;    // 立即得到 7
+value_non <= ai + bi;    // 立即计算 7，安排稍后更新
+ai2       <= 4'd5;       // 安排更新，当前仍为 7
+bi2       <= 4'd6;       // 安排更新，当前仍为 8
+value_non2 <= ai2 + bi2; // 读取旧值 7+8=15，安排更新为 4'hf
+```
+
+当前时刻更新完成后：`ai2=5`、`bi2=6`，但 `value_non2=4'hf`。它没有变成 `4'hb`，因为执行该过程赋值时读取的是旧值；输入稍后改变不会让已经执行过的过程赋值自动重算。相反，`assign sum2 = ai2 + bi2;` 是连续赋值，输入变为 5、6 后会在当前时刻的事件处理过程中更新为 `4'hb`，无需等待下次输入改变。
+
+**“后续更新”不等于下一个时钟或下一纳秒，也不等于等所有程序结束。**仿真器在 20 ns 先处理当前可执行事件，再处理已安排的 NBA 更新；变化又可能触发其他过程或连续赋值，继续在同一个 20 ns 处理，直到当前时间点的事件处理完成。遇到 `#10` 暂停的过程会在未来时刻继续，并不阻碍当前 NBA。不同并发过程同刻读写共享信号时，不能依赖源码顺序，可能发生竞争。
+
+```verilog
+// 片段：a 开始为 7
+#20;
+a <= 4'd5;
+$display("display a=%0d", a); // 这里读到旧值 7
+$strobe ("strobe  a=%0d", a); // 当前时刻末尾观察到 5
+```
+
+该观察假定没有其他过程同时驱动 `a`。`$strobe` 在当前仿真时刻较后的监视阶段输出；这是调试调度的手段，不是硬件功能。时序 RTL 通常用 `<=`，组合过程通常用 `=`，但硬件类型由完整行为决定。参考：[IEEE 1364-2005](https://www.csie.nuk.edu.tw/~stpan/course/Verilog1964-2005.pdf)。
+
+### 11.5 `fork...join` 为什么是 35 ns？
+
+```verilog
+`timescale 1ns/1ns
+initial begin
+    ai_sequen2 = 4'd5;             // 0 ns
+    fork
+        #10 ai_paral2 = 4'd5;      // 10 ns
+        #15 bi_paral2 = 4'd8;      // 15 ns
+    join
+    #20 bi_sequen2 = 4'd8;         // 15+20=35 ns
+end
+```
+
+两个 `fork` 分支从 0 ns 并发计时；第一个 10 ns 完成，第二个 15 ns 完成。`join` 等全部分支结束，所以后面的 `#20` 从 15 ns 开始。如果去掉 `fork...join`、改为同一顺序块，两个等待变成 10 ns 和再等 15 ns，第二条在 25 ns，最后一条在 45 ns。`join` 是等待分支结束的仿真控制，不是信号赋值或时钟。
+
+### 11.6 有符号判断、补码与算术右移
+
+位模式本身不决定数是否有符号：`4'b1001` 是无符号 9；`4'sb1001` 是有符号补码 -7。带进制的字面量默认无符号，添加 `s` 才是有符号；未写位宽和进制的普通十进制整数如 `9` 按有符号整数处理，未指定位宽至少为 32 位。`reg [3:0] a` 和 `wire [3:0] a` 默认无符号；`reg signed [3:0] a` 有符号，`integer` 默认为有符号。`4'sd9` 的 4 位位模式是 `1001`，按有符号数解释为 -7；若要表示 +9 应使用例如 `5'sd9`。
+
+```verilog
+wire        [3:0] u_shift = 4'b1001  >>> 1; // 0100，源表达式无符号补 0
+wire signed [3:0] s_shift = 4'sb1001 >>> 1; // 1100，源表达式有符号补 1
+```
+
+有符号表达式算术右移 `>>>` 时，左侧空位复制原符号位；无符号时补 0。例中 -7 算术右移一位得到 -4，即向负无穷方向取整，不要一概等同于有符号除法的向零截断。变量切片与拼接表达式通常是无符号，即使原变量为 `signed`；可用 `$signed(...)` 明确表达意图。表达式上下文和位宽也会影响求值，应明确宽度并验证。参考：[Verilog-2001 参考手册](https://cseweb.ucsd.edu/~hadi/teaching/cs3220/01-2014fa/doc/verilog/verilog_2001_ref_guide.pdf)。
+
+`8'sb10111011` 是 8 位有符号负数：全部位取反得到 `01000100`，加一得到 `01000101`，即 69，所以原数为 -69；同样位模式的无符号 `8'b10111011` 为 187。
+
+### 11.7 条件不完整为什么会生成锁存器？
+
+```verilog
+always @(*) begin
+    if (en)
+        y = a; // en=0 时未赋值，要求 y 保留旧值
+end
+```
+
+`en=1` 时输出跟随 `a`，`en=0` 时输出需要保存之前的值，因此综合器通常推导电平敏感的 latch。原话“条件不完整会综合出寄存器”不够准确：这里通常是锁存器，不一定是边沿触发触发器。对期望的组合逻辑，要在所有路径、对每个输出的每一位都赋值：
+
+```verilog
+always @(*) begin
+    if (en) y = a;
+    else    y = 1'b0;
+end
+```
+
+`case` 同样需要完整覆盖或给默认赋值。与此不同，在 `always @(posedge clk)` 中 `if (en) q <= d;` 没有 `else` 通常是有意要求触发器在 `en=0` 保持，并非因此产生组合 latch。`reg` 只是过程变量类型，不自动决定生成寄存器还是组合逻辑。
+
+### 11.8 有符号信号和模块端口位宽不一致
+
+对普通单向 `input` / `output`，先判断数据方向和源表达式，再判断两端位宽及接收端如何解释。输入端口是外部表达式提供数据；输出端口是模块内部输出提供数据。一般按赋值语义调整：源窄时，有符号源符号扩展、无符号源补零；源宽时丢掉高位。目标端自身的有符号声明决定接收后如何解释位，不会自动改变源表达式的类型。`inout` 为双向连接，不能简单套用单向赋值。
+
+```verilog
+// 输入端口假设为 input wire signed [7:0] data_in
+wire signed [3:0] signed_src = 4'sb1010; // -6
+wire        [3:0] unsigned_src = 4'b1010; // +10
+// .data_in(signed_src)   -> 11111010，按 signed 接收为 -6
+// .data_in(unsigned_src) -> 00001010，按 signed 接收为 +10
+```
+
+如果目标 8 位端口声明为无符号，来自有符号 `signed_src` 的扩展位仍为 `11111010`，但目标按无符号数解释为 250。切片 `signed_src[3:0]` 是无符号表达式；要明确按有符号解释，可使用 `$signed(signed_src[3:0])`。4 位负数符号扩展也可明确写为 `{{4{signed_src[3]}}, signed_src}`；拼接本身无符号，若后续表达式需要有符号运算，应进一步明确类型。
+
+窄化时 `8'sb11111101`（-3）截取低 4 位为 `1101`（按有符号仍为 -3）；`8'sb11110111`（-9）截取低 4 位为 `0111`（按有符号为 +7），因为 4 位有符号范围仅 -8～7。截断不会自动饱和或报警。参数、端口尽量明确同宽同符号，检查工具位宽告警。来源：[IEEE 1364-2005，第 12.3.9、12.3.11 节](https://www.csie.nuk.edu.tw/~stpan/course/Verilog1964-2005.pdf)。
+
+### 11.9 `defparam` 与带参数例化
+
+`parameter` 是设计展开时为某个实例确定的配置常量，例如数据位宽或掩码；不是运行时可以随输入变化的信号。`localparam` 适合不希望外部覆盖的内部常量。
+
+```verilog
+module mask_demo #(
+    parameter [3:0] MASK = 4'b0011
+) (
+    input wire [3:0] data_in,
+    output wire [3:0] data_out
+);
+    assign data_out = data_in & MASK;
+endmodule
+```
+
+下列两种**分别使用**的方式都为实例 `u_mask` 指定 `MASK=0111`：
+
+```verilog
+// 方法 1：通过实例层次路径覆盖
+mask_demo u_mask (.data_in(data), .data_out(result));
+defparam u_mask.MASK = 4'b0111;
+```
+
+```verilog
+// 方法 2：例化时按参数名覆盖，推荐用于新代码
+mask_demo #(.MASK(4'b0111)) u_mask (
+    .data_in(data), .data_out(result)
+);
+```
+
+`#(.MASK(...))` 是参数配置，不是 testbench 的时间延迟 `#10`；端口括号中的 `.data_in(data)` 才是连接运行时输入。实例不覆盖时使用默认值。多个实例可分别配置，不会互相修改。`defparam` 通过层次路径改变参数，远离例化位置、维护时较难追踪；不应同时用两种方式覆盖同一参数。
+
+[教程 RAM 示例](https://www.runoob.com/w3cnote/verilog-defparam.html)将 `MASK` 默认值 3 覆盖为 7。4 位低位掩码分别为 `0011`、`0111`：输入 4 为 `0100`，与 3 得 0、与 7 得 4；输入 9 为 `1001`，与 7 得 1。教程在 `mem[A] <= D & MASK` **写入时就屏蔽**，读取 `Q <= mem[A] & MASK` 时再做一次掩码。地址 4 位、`mem[0:15]` 表示 16 个 4 位存储位置；读写由时钟上升沿触发。
+
+### 11.10 `function` 与 `task` 的区别
+
+在经典 Verilog-2001/2005 中，`function` 适合一次计算并返回一个值，调用是表达式的一部分；至少有一个 `input`，不声明 `output/inout`，不能含 `#`、`@`、`wait` 等时间控制，不能调用 task，也不能使用非阻塞赋值。它可以在 20 ns 等任意时刻被调用，“不消耗仿真时间”不代表只能在 0 ns 执行，也不代表真实硬件没有传播延迟。
+
+```verilog
+function [3:0] max_value;
+    input [3:0] x, y;
+    begin
+        if (x > y) max_value = x;
+        else       max_value = y;
+    end
+endfunction
+assign result = max_value(a, b);
+```
+
+函数名是返回值，调用也可用于比较等表达式；典型用途为译码、比较、饱和、奇偶位或纯组合转换。是否可综合仍取决于内容和工具。
+
+`task` 适合组织一组动作，可以不带参数，也可以使用多个 `input/output/inout` 参数；可调用函数或其他任务，并允许包含 `#`、`@`、`wait`。任务不一定消耗仿真时间：有等待才会让调用过程等待，顺序调用者会等任务结束再继续。以下是 testbench 的过程片段：
+
+```verilog
+task drive_inputs;
+    input [3:0] new_a, new_b;
+    begin
+        @(negedge clk);
+        a = new_a;
+        b = new_b;
+    end
+endtask
+// drive_inputs(4'd1, 4'd2); // 在 initial/always 中调用
+```
+
+任务常用于复位、等待时钟、发送数据和检查结果。经典 Verilog task 的 `output` 参数在任务返回时复制给调用者，任务内部对该参数的中间修改并非实时传到外部；直接修改模块作用域信号则会在修改时体现，但要避免多个过程竞争驱动。包含时延的任务通常用于仿真；不包含时延的任务用于 RTL 时能否综合取决于写法和工具。
+
+默认静态 task/function 的参数和局部变量可能被重叠调用共享；`task automatic` / `function automatic` 为每次调用提供独立局部存储，适合并发重叠或递归。它不会隔离不同调用对同一个模块级信号的访问。SystemVerilog 有更多扩展，不应将经典规则不加区分地推广。来源：[函数](https://www.runoob.com/w3cnote/verilog-function.html)、[任务](https://www.runoob.com/w3cnote/verilog-task.html)、[IEEE 1364-2005 第 10 章](https://bonany.cc/adap24/assets/lec/IEEE.1364-2005_Verilog2005.pdf)。
+
+### 11.11 用 UART 发送器串起知识点
+
+会话中寻找可贯通多个知识点的经典代码，参考的是 [Nandland UART 教程](https://nandland.com/uart-serial-port-module/)；下列教学版为独立简化示例，并非原教程源码。任何单个例子都无法自然覆盖全部 Verilog：例如 `force/release`、文件读写、跨时钟域与静态时序分析仍需另外学习。
+
+UART 8N1 帧包含 1 位起始位 0、8 位数据（最低位先发送）、1 位停止位 1；空闲线为 1。`8'h96 = 8'b10010110`，从低到高发出的数据位为 `0,1,1,0,1,0,0,1`。参数 `CLKS_PER_BIT` 是每个串行位持续的系统时钟周期数，典型按系统时钟频率除以目标波特率近似选整数，并评估误差。
+
+```verilog
+module uart_tx_demo #(
+    parameter CLKS_PER_BIT = 4 // 要求 >= 1
+) (
+    input wire clk, rst_n, start,
+    input wire [7:0] data_in,
+    output reg tx,
+    output wire busy,
+    output reg done
+);
+    localparam [1:0] IDLE=2'd0, START=2'd1, DATA=2'd2, STOP=2'd3;
+    reg [1:0] state;
+    reg [31:0] clk_count;
+    reg [2:0] bit_index;
+    reg [7:0] data_reg;
+    assign busy = (state != IDLE);
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            state <= IDLE; clk_count <= 0; bit_index <= 0;
+            data_reg <= 0; tx <= 1'b1; done <= 1'b0;
+        end else begin
+            done <= 1'b0;
+            case (state)
+                IDLE: begin
+                    tx <= 1'b1; clk_count <= 0; bit_index <= 0;
+                    if (start) begin
+                        data_reg <= data_in;
+                        tx <= 1'b0;
+                        state <= START;
+                    end
+                end
+                START: begin
+                    if (clk_count == CLKS_PER_BIT - 1) begin
+                        clk_count <= 0;
+                        tx <= data_reg[0];
+                        state <= DATA;
+                    end else clk_count <= clk_count + 1'b1;
+                end
+                DATA: begin
+                    if (clk_count == CLKS_PER_BIT - 1) begin
+                        clk_count <= 0;
+                        if (bit_index == 3'd7) begin
+                            tx <= 1'b1;
+                            state <= STOP;
+                        end else begin
+                            bit_index <= bit_index + 1'b1;
+                            tx <= data_reg[bit_index + 1'b1];
+                        end
+                    end else clk_count <= clk_count + 1'b1;
+                end
+                STOP: begin
+                    if (clk_count == CLKS_PER_BIT - 1) begin
+                        clk_count <= 0;
+                        state <= IDLE;
+                        done <= 1'b1;
+                    end else clk_count <= clk_count + 1'b1;
+                end
+                default: begin
+                    state <= IDLE; clk_count <= 0; bit_index <= 0; tx <= 1'b1;
+                end
+            endcase
+        end
+    end
+endmodule
+```
+
+阅读顺序：`state` 表示空闲、起始位、数据位、停止位；`data_reg` 在空闲且采样到 `start` 时保存一个字节；`clk_count` 计满一个位周期后切换；`bit_index` 记录当前位；`busy` 是由 `state` 驱动的连续赋值；`done` 在停止位结束后为高一个时钟周期。`start` 只在空闲时采样，忙碌时不会排队；持续为高可能导致回到空闲后再次发送。`bit_index <= bit_index+1` 和下一句 `data_reg[bit_index+1]` 均基于更新前的旧索引，保证下一位正确。停止位结束时转 IDLE，`busy` 随状态变化为低。
+
+仿真需另写 testbench：生成时钟，显式拉低复位后释放，在采样边沿之外驱动 `start/data_in`，在每位中间检查 `tx`，再检查 `done/busy`；Icarus Verilog 编译和运行方式见[官方入门](https://steveicarus.github.io/iverilog/usage/getting_started.html)。当前会话环境此前未发现 Verilog 仿真器，上面的教学版代码**尚未实际仿真验证**；真实设计还需更多输入、复位、协议时序与硬件约束验证。
+
+### 11.12 复盘：连续赋值与端口连接不能只看名字
+
+`assign y = a + b` 是持续的组合关系，源变化导致当前仿真时刻的事件队列重新求值，不需要等下一次赋值才生效。模块 `u_child` 中 `.a(parent_signal)` 左边是子模块端口，括号中是父模块信号，二者即使同名也属于不同层级。调用函数用于表达式计算；调用任务是执行过程。读代码时依次问：值由谁驱动、何时更新、保存在哪里、信号位宽/类型是多少。
+
+### 11.13 视频材料的访问状态
+
+会话中曾请求依据 [B 站视频 BV1iv4y1F7Km](https://www.bilibili.com/video/BV1iv4y1F7Km/)更新本文。此前该页面返回访问限制，搜索和其他公开入口未提供可核实的视频内容或字幕，因此**尚未分析视频内容**；本节没有把其他教程或猜测当成该视频的观点。待获得字幕、文字稿或视频后，再对照补充并标明来源。

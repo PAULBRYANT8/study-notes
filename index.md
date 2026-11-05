@@ -26,6 +26,7 @@
 
 ## Concepts
 
+- [[linux-essential-commands]] — 从终端、文件与日志到进程、远程连接和日常工作练习的 Linux 入门
 - [[java-programming-in-ai-era]] — AI 编程时代的 Java 必备知识、场景选型、工程底座与学习路线
 - [[linux-debugging-for-npu-adaptation]] — 用 gdb/core、pdb、strace、perf 和 dmesg 按层定位训练崩溃、hang 与 host 性能问题
 - [[cpp-reading-for-pytorch-backends]] — 围绕模板、RAII、智能指针、宏、注册和动态链接读懂 ATen/torch_npu C++ 调用链

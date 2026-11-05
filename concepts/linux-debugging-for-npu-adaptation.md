@@ -582,4 +582,4 @@ journalctl -k --since "10 minutes ago"
 
 ## 相关
 
-[[npu-training-adaptation-learning-path]] · [[cpp-reading-for-pytorch-backends]] · [[python-advanced-mechanisms-for-pytorch]] · [[deep-learning-training-numerics]] · [[floating-point-error-analysis]] · [[npu-precision-debugging]]
+[[linux-essential-commands]] · [[npu-training-adaptation-learning-path]] · [[cpp-reading-for-pytorch-backends]] · [[python-advanced-mechanisms-for-pytorch]] · [[deep-learning-training-numerics]] · [[floating-point-error-analysis]] · [[npu-precision-debugging]]

@@ -2,7 +2,7 @@
 title: TP 模块切分机制
 type: concept
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-11-06
 tags: [pytorch, tensor-parallel, dtensor, 模块]
 sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
@@ -47,7 +47,7 @@ distribute_module(
 | `desired_input_layouts` | 算子实际需要的布局，与 `input_layouts` 不同则 `redistribute`（**产生通信**） |
 | `output_layouts` | 期望输出成什么布局，与算子自然产出不同则 `redistribute` |
 
-`input_layouts` 是断言性质的：`DTensor.from_local(..., run_check=False)` 直接相信你的声明，不校验。**声明错了不报错，只会静默算错。**
+`input_layouts` 是断言性质的：`DTensor.from_local(..., run_check=False)` 直接相信你的声明，不校验。**声明错了不保证在声明处被发现，可能产生错误结果或后续异常。**
 
 `desired_input_layouts` 通常是策略写死的（colwise 恒为 `Replicate()`），只有 [[rowwise-parallel]] 会根据模块类型在 `_apply` 里动态设置。
 
@@ -55,7 +55,7 @@ distribute_module(
 
 统一走 `distribute_tensor(param, mesh, [placement], src_data_rank=...)`，包成 `nn.Parameter` 后 `register_parameter` 换掉原参数。**参数从此是 DTensor**，优化器、checkpoint 都要能处理。
 
-`SequenceParallel` 是唯一的例外：它用 `DTensor.from_local(param, mesh, [Replicate()])` 而不是 `distribute_tensor`，理由写在注释里——LayerNorm/RMSNorm 默认 ones 初始化，各卡本来就一样，不必广播。代价是**自定义初始化会静默失效**，各卡权重不一致，docstring 里专门警告了。
+`SequenceParallel` 是唯一的例外：它用 `DTensor.from_local(param, mesh, [Replicate()])` 而不是 `distribute_tensor`，理由写在注释里——LayerNorm/RMSNorm 默认 ones 初始化，各卡本来就一样，不必广播。如果自定义初始化导致各 rank 参数不一致，复制布局声明就不成立；若初始化已保证一致，则不能仅因自定义初始化断定错误。
 
 ## src_data_rank
 
@@ -79,7 +79,7 @@ parallelize_module(model, tp_mesh, {
 
 匹配逻辑按 `.` 逐级递归，每级用 `fnmatch(child_name, token)`。空字符串 key `""` 表示应用到当前模块自身。
 
-**匹配不上只会 warning 然后跳过，不报错。** 改了模型结构后 plan 失效，训练照常跑但没并行——这是最容易踩的坑，`warnings.warn` 很容易被淹没在日志里。
+**某条目在某级匹配不上会 warning 然后跳过该条目。** 改了模型结构后，部分 plan 可能失效而其他条目仍生效；警告容易被淹没在日志里。
 
 ## 组合出一个 Transformer 层
 
@@ -94,6 +94,10 @@ parallelize_module(model, tp_mesh, {
 ```
 
 衔接处布局一致就是零通信，不一致就查 [[dtensor-placement]] 的映射表。
+
+## 补充：实现边界与核查
+
+**复制一致性：**在 `2.14.0a0`、提交 `a07d9d50489` 的 `style.py:389-398` 中，SequenceParallel 使用 `DTensor.from_local(..., [Replicate()], run_check=False)`，摘录未显示广播或一致性检查。由此可推导：若各 rank 自定义初始化结果不同，复制布局声明便与实际数据不符；若初始化已保证一致，则不能仅因使用自定义初始化判定错误。此外，`api.py:99-114` 只证明未匹配条目会警告并跳过，不能推断整个模型都未并行，其他计划条目仍可能生效。
 
 ## 相关
 

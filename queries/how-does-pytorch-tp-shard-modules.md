@@ -2,7 +2,7 @@
 title: PyTorch 的 TP 是怎么切分模块的？
 type: query
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-11-06
 tags: [pytorch, tensor-parallel, 分片]
 sources:
   - "[[2026-07-26-pytorch-tp-source]]"
@@ -33,7 +33,7 @@ parallelize_module(model, tp_mesh, {"layers.*.w1": ColwiseParallel(), ...})
 
 存储视角和数学视角是错位的：`nn.Linear.weight` 形状 `(out, in)` 参与的是 `weight^T`，所以存储切 dim 0 = 数学切列。
 
-**配对使用时中间零通信**，整个 MLP/Attention 只付一次归约——这是 TP 的全部要点。见 [[colwise-vs-rowwise-parallel]]。
+当输入、分片及输出布局满足常见 MLP 配对条件时，中间可无需重分布，前向输出通常需要一次归约；这不等于整个训练过程只有一次通信。见 [[colwise-vs-rowwise-parallel]]。
 
 ## 分层回答
 
@@ -60,6 +60,10 @@ parallelize_module(model, tp_mesh, {"layers.*.w1": ColwiseParallel(), ...})
 ## 状态
 
 TP 的 9 个导出符号全部是公开稳定 API，和 [[context-parallel]] 的 prototype 状态形成对比。唯一带下划线的是 inductor 侧的 `_micro_pipeline_tp` 配置。
+
+## 补充：实现边界与核查
+
+**排查顺序：**先看计划是否命中，再核对参数布局，最后检查运行时通信。对 `2.14.0a0`、提交 `a07d9d50489`，`api.py:99-114` 的警告只能证明某条计划在某级匹配失败；`style.py:121-143、250-279` 可用于核对 Linear 权重分别采用 `Shard(0)` 与 `Shard(1)`。通信分析还应区分参数初始化与前向布局转换，不能只统计层间归约。现有摘录未展示“DTensor 输入忽略声明”的完整分支，也未展示 Symmetric Memory 不可用时静默跳过的检查代码，这两项应保留为待核实信息。
 
 ## 相关
 

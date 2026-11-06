@@ -2,7 +2,7 @@
 title: micro_pipeline_tp（async TP）
 type: entity
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-11-06
 tags: [pytorch, tensor-parallel, inductor, 通信重叠, symm-mem]
 sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
@@ -15,7 +15,7 @@ sources: ["[[2026-07-26-pytorch-tp-source]]"]
 
 [[tensor-parallel]] 的通信在关键路径上：`all_gather` 必须全部完成才能开始 matmul，`matmul` 必须全部完成才能 `reduce_scatter`。这段时间 GPU 的计算单元是闲的。
 
-async TP 把它拆成流水：先 all_gather 第一块 → 边算第一块的 matmul 边 gather 第二块 → 以此类推。通信被计算掩盖掉。
+async TP 可将匹配模式拆成流水：先 all_gather 第一块 → 边算第一块的 matmul 边 gather 第二块 → 以此类推。它有机会重叠通信与计算，但实际隐藏比例需测量。
 
 ## 匹配的两个模式
 
@@ -64,3 +64,9 @@ def micro_pipeline_tp_pass(graph):
 
 - 被优化的对象：[[tp-module-sharding]] 里布局衔接处产生的通信
 - 通信从哪来：[[dtensor-placement]]
+
+## 如何解读候选为空的日志
+
+[[2026-07-26-pytorch-tp-source]] 的 pass 入口先查找 all-gather 与 reduce-scatter 模式；开启普通计算通信重排时，会进一步过滤可由简单重叠覆盖的候选。过滤后两个列表都为空才记录 warning。因此，warning 既可能对应未匹配到候选，也可能对应候选被过滤；它不是融合失败原因的完整诊断。
+
+反过来，存在候选也只表示随后调用了融合函数，能否真正融合还取决于函数内部的检查。摘录只列出 scaled 算子名称，未给出完整 dtype 和硬件限制；具体支持、重叠率与加速效果需核对对应实现并在目标环境实测。

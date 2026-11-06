@@ -2,7 +2,7 @@
 title: _PerDocumentHeadTailLoadBalancer
 type: entity
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-11-06
 tags: [pytorch, context-parallel, 负载均衡, 文档掩码]
 sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
@@ -51,6 +51,14 @@ commit `53db8cca157`（[CP] Balance per-document head-tail load balancer with ra
 - **每篇文档**的长度都要能被 `2 * world_size` 整除，不只是总长度。短文档在这里很容易踩线
 - 同样只对因果掩码有意义
 - 多头场景要求各 head 掩码一致
+
+## 混合长度示例与掩码边界
+
+**推导**：两个 rank 打包长度分别为 4 和 8 的文档，全局位置分别为 `[0,1,2,3]` 和 `[4,5,6,7,8,9,10,11]`。每篇文档独立头尾配对后，rank-major 排列为 `[0,3,4,5,10,11, 1,2,6,7,8,9]`。连续切成两份后，每个 rank 从两篇文档分别取得 2、4 个位置；按各文档内的标准因果关系计算，每个 rank 的可见 QK 对数均为 $5+18=23$。
+
+若把同样的逐文档结果按 document-major 排为 `[0,3,1,2,4,5,10,11,6,7,8,9]`，再每 6 个位置切一份，两个 rank 的可见对数分别为 13 和 33。该排列是解释 sharding contract 的示意，不声称复现了历史 bug 的全部代码。依据见 [[2026-07-25-pytorch-cp-source]] 中 per-document rank-major 注释。
+
+**语义边界**：重排只决定哪些位置归哪个 rank，不会自行创建文档隔离掩码。如何在所选 attention 后端传递并执行 document-causal mask，需核对该版本完整实现与测试；原始摘录未展示此路径。
 
 ## 相关
 

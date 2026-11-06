@@ -2,7 +2,7 @@
 title: Context Parallel (CP)
 type: concept
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-11-06
 tags: [pytorch, 分布式, 长序列, attention]
 sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
@@ -53,3 +53,9 @@ Context Parallel（上下文并行，CP）是**沿序列维度**切分张量的�
 - 负载均衡要求 `is_causal=True`，否则 `_templated_ring_attention` 直接抛 `RuntimeError`
 - 多头注意力要求各 head 的 mask 一致（索引张量没有 head 维）
 - 假定 batch 维是 dim 0
+
+## 不同路径的约束与显存边界
+
+[[2026-07-25-pytorch-cp-source]] 中 `seq_length % (2 * world_size) == 0` 的检查出现在 HeadTail 索引生成片段，不能只凭它推断所有 CP 均衡器和 attention 后端都具有同一约束。PTRR、BlockMask 和因果检查的具体条件分别见 [[ptrr-load-balancer]]、[[cp-sequence-sharding]] 和 [[cp-load-balancers]]；这些笔记中未被原始摘录展示的实现细节仍需核对对应提交。
+
+**形状推导**：假设 Q/K/V 初始均为 `[B,H,512,D]`，两 rank 平分序列，本地 Q 为 `[B,H,256,D]`。若采用 [[allgather-vs-alltoall-kv-rotation]] 所述的 flex 全量 KV 路径，聚合后的 K/V 为 `[B,H,512,D]`。所以输入按序列分片，不意味着 attention 的全部中间缓存按两卡等比例缩小；实际峰值内存需要测量。

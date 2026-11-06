@@ -2,7 +2,7 @@
 title: PyTorch 的 CP 是怎么切分序列的？
 type: query
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-11-06
 tags: [pytorch, context-parallel, 分片]
 sources:
   - "[[2026-07-25-pytorch-cp-source]]"
@@ -47,6 +47,12 @@ DTensor 在这里只是**一次性的切分工具**：`distribute_tensor(...).to
 除 `context_parallel` 这个 context manager 外，全部 API 都是 `_` 前缀的私有 prototype，包括新版的 `_context_parallel_shard`。测试和实际用法都在用私有 API，说明公开接口还没定型。
 
 `torch/distributed/tensor/experimental/_attention.py` 已退化成 44 行的 BC stub，实体全部迁到 `_context_parallel/` 子包。TODO 里写着待最终接口确定后再加 deprecation。
+
+## 一个从重排到还原的例子
+
+**依据 [[2026-07-25-pytorch-cp-source]] 的头尾索引和 sharding contract 推导**：长度 8、两 rank 的重排索引为 `[0,1,6,7,2,3,4,5]`。在重排后的序列中连续切成前四项和后四项，rank 0 对应原位置 `[0,1,6,7]`，rank 1 对应 `[2,3,4,5]`。因此“连续切分”说的是重排后的排列，不等于各 rank 持有原始序列的连续位置。
+
+按 rank 顺序拼回得到的仍是重排顺序；应用该排列的 `argsort` 才能恢复原序列。这个例子只验证索引代数，不替代对 `context_parallel_unshard` 的通信实现和不同 rank 输入一致性的测试。重排决定位置归属，还必须配合正确的因果或文档掩码，不能单凭重排保证任意 attention 语义。
 
 ## 相关
 

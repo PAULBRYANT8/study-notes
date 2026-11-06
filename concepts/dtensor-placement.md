@@ -2,7 +2,7 @@
 title: DTensor Placement（Shard / Replicate / Partial）
 type: concept
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-11-06
 tags: [pytorch, dtensor, 分布式, 集合通信]
 sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
@@ -33,9 +33,9 @@ Placement 描述一个全局张量在 DeviceMesh 的某一维上**怎么分布**
 | `Shard(i)` → `Shard(j)` | all-to-all（本质是 gather + reshard） |
 | `Replicate` → `Shard` | 本地切片，**无通信** |
 
-**这张表是理解所有 TP 通信开销的钥匙。** 看一份 parallelize_plan 时，把每层的 output_layouts 和下一层的 desired_input_layouts 对上，不一致的地方就是一次通信。
+**这张表是理解所有 TP 通信开销的钥匙。** 看一份 parallelize_plan 时，把每层的 output_layouts 和下一层的 desired_input_layouts 对上，不一致的地方需要查看具体转换；例如 Replicate 到 Shard 可以是本地切片，并非所有转换都发生集合通信。
 
-`Partial → Shard` 用 reduce_scatter 而非 allreduce 是 [[sequence-parallel]] 能省通信量的原因：reduce_scatter 的数据量只有 allreduce 的 `1/world_size`。
+Partial 到 Shard 的输出只保留本地分片，可配合 [[sequence-parallel]] 减少复制的激活；通信流量不能简单等同于输出大小，需考虑集合算法与统计口径。
 
 ## Partial 的线性性
 
@@ -59,3 +59,7 @@ ALL_REDUCE_OPS = ("sum", "avg", "min", "max", "product")
 ## 与 CP 的联系
 
 [[cp-sequence-sharding]] 里 CP 的整个切分动作就是一行 `distribute_tensor(buffer, mesh, [Shard(seq_dim)]).to_local()`——用完立刻退回普通张量。TP 则**全程持有 DTensor**，靠 placement 在算子间传播来自动推导通信。这是两者实现风格上最大的分歧。
+
+## 补充：实现边界与核查
+
+**布局变化与通信：**对 `2.14.0a0`、提交 `a07d9d50489`，本文表格自身已列出 `Replicate → Shard` 为本地切片，因此布局变化不必然产生集合通信。原始摘录 `style.py:292-300` 明确支持 Rowwise 输出转复制布局时用 allreduce、转分片布局时用 reduce_scatter，但不能据此断言后者通信量恒为前者的 $1/p$。通信量还须明确统计口径、算法和并行规模 $p$。`_redistribute.py:191-195` 仅给出位置锚点，未展示实现；具体映射条件、`_StridedShard` 行为及 mask 生命周期仍待核实。

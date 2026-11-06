@@ -2,12 +2,12 @@
 title: _PTRRLoadBalancer
 type: entity
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-11-06
 tags: [pytorch, context-parallel, 负载均衡, flex-attention, 调度]
 sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
 
-`_PTRRLoadBalancer`（Processing-Time based Round-Robin）不假设掩码形状，而是**从 `BlockMask` 里读出每个 Q 块的实际计算量**，当作调度问题求解。只能配 `flex_attention()` 使用。
+`_PTRRLoadBalancer`（Processing-Time based Round-Robin）不假设掩码形状，而是**从 `BlockMask` 里估算每个 Q 块的工作量**，当作调度问题求解。只能配 `flex_attention()` 使用。
 
 位置：`_load_balancer.py:300-472`。
 
@@ -15,7 +15,7 @@ sources: ["[[2026-07-25-pytorch-cp-source]]"]
 
 [[head-tail-load-balancer]] 和 [[per-document-head-tail-load-balancer]] 都是**解析式**的——预设掩码是因果三角形，据此推出对称配对能均衡。掩码换个形状（滑窗、前缀 LM、任意稀疏）就不成立了。
 
-PTRR 是**测量式**的：把每个 Q 块要算的 KV 块数当作任务的处理时间，然后做一次贪心调度，不关心掩码为什么长这样。
+PTRR 是**基于块数估算**的：把每个 Q 块要算的 KV 块数当作任务的处理时间，然后做一次贪心调度，不关心掩码为什么长这样。
 
 ## 计算量从哪来
 
@@ -64,6 +64,12 @@ batch 维用 `torch.vmap` 并行处理。
 - `q_blk_size == kv_blk_size`，否则 `AssertionError`（源码注明 "for now only support"）
 - `BlockMask` 形状须为 `(B, 1, seq_len, seq_len)` 或 `(1, 1, seq_len, seq_len)`
 - 粒度是块（默认 128 token），比头尾配对粗
+
+## 工作量代理与调度示例
+
+本笔记展示的 `kv_num_blocks + full_kv_num_blocks` 是根据 BlockMask 统计的块数代理，不是设备实测耗时。一个部分掩码块和一个全满块在该加法中各计一次；块数相同不保证实际耗时相同。[[2026-07-25-pytorch-cp-source]] 给出了类和调度函数的位置，但没有附这段 PTRR 实现，因此具体行为仍以对应提交源码为准。
+
+**根据本笔记调度代码的示意推导**：四个 Q 块的代理负载为 `[8,7,6,5]`，分给两个 rank，按降序蛇形分配可得到 rank 0 的块 0、3 和 rank 1 的块 1、2，各自代理和为 13。若每块恰为 128 token，rank 0 对应 token `[0,128)` 和 `[384,512)`，rank 1 对应 `[128,384)`；最终索引仍需按 rank 聚集，才能配合后续连续分片。这里的 13 不是毫秒数或性能保证。
 
 ## 相关
 

@@ -2,7 +2,7 @@
 title: CP 序列切分流程
 type: concept
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-11-06
 tags: [pytorch, context-parallel, 分片, dtensor]
 sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
@@ -84,6 +84,12 @@ else:
 而 `context_parallel_unshard()` 在你没传 load_balancer 时，会去读这个全局值来决定是否用默认的 head-tail 均衡器还原。
 
 所以 shard 和 unshard 的 load_balancer 参数必须成对传，否则还原顺序会错，而且**不会报错，只会静默算错**。旧版 `context_parallel` context manager 有 `old_enable_load_balance` 保存/恢复，新版 `_context_parallel_shard` 没有——它只写不还原。
+
+## 切分输入与索引布局的检查
+
+源码摘录中的切分调用使用 `src_data_rank=None`。按本笔记对该参数的解释，各 rank 从自己的输入切片而不是先广播：若两个 rank 原本持有的完整输入不同，使用相同索引也不会自动把它们变成一致副本。对同一个逻辑张量做分片时，应检查输入和重排策略的一致性；摘录本身不足以确认是否还有其他一致性检查。
+
+本笔记展示的 `seq_dim == 0` 分支使用 `indices[0]`。**推导**：一个共享的一维位置向量只能由该调用应用索引第一行，不能在同一次一维重排中同时表达两个样本不同的排列；按样本变化的排列需要匹配 batch 维和相应的重排路径。完整边界检查仍需核对对应提交的 `_context_parallel_buffers`。
 
 ## 相关
 

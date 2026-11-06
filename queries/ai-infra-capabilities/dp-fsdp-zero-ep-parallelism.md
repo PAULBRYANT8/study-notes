@@ -2,7 +2,7 @@
 title: DP、FSDP、ZeRO 与 EP 并行维度
 type: query
 created: 2026-08-31
-updated: 2026-08-31
+updated: 2026-11-06
 tags: [ai-infra, distributed, data-parallel, fsdp, zero, expert-parallel, moe]
 sources:
   - "[[communication-and-parallelism]]"
@@ -139,6 +139,8 @@ hidden states
 - **训练/推理差异**：训练更关注 token drop、负载均衡损失和反向；推理还要关注请求动态性、decode 小 batch 和跨请求 cache。
 
 EP 不是简单地把 FFN 权重切成几片；它切的是“专家路由后的计算归属”，所以 Router、AllToAll、容量管理和本地 expert kernel 必须一起设计。
+
+具体例子可参见 [[deepseekmoe]]：论文中不同规模的实验采用了不同的专家放置方式，可以用来区分流水线阶段通信和同层专家并行通信。
 
 ## 五、与 TP/CP 的组合关系
 

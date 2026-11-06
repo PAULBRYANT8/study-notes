@@ -6,13 +6,13 @@
 
 ### Papers
 
-- [[deepseekmoe]] — 细粒度专家切分、共享专家隔离及 2B/16B/145B 规模实验
-- [[glu-variants-improve-transformer]] — 门控 FFN 的结构、公平维度匹配方法与 T5 实验结果
+- [[deepseekmoe]] — 细粒度与共享专家、路由归并、负载均衡及不同规模的专家部署
+- [[glu-variants-improve-transformer]] — 门控 FFN、张量形状、投影融合与张量并行拆分
 
 ### PyTorch TP
 
 - [[colwise-parallel]] — Linear 权重按输出维切，输出 `Shard(-1)` 无需归约
-- [[rowwise-parallel]] — 按输入维切，输出 `Partial`；bias 必须复制否则加 N 次
+- [[rowwise-parallel]] — 按输入维切分，输出待归约部分和，并讨论偏置与通信边界
 - [[sequence-parallel]] — norm/dropout 层参数复制、激活按序列维切，省冗余显存
 - [[prepare-module-input-output]] — 不切参数，只在模块边界调布局
 - [[loss-parallel]] — 词表维分片下直接算 cross entropy，不聚合 logits
@@ -20,9 +20,9 @@
 
 ### PyTorch CP
 
-- [[head-tail-load-balancer]] — CP 默认均衡策略，头尾对称配对抵消因果掩码的负载倾斜
+- [[head-tail-load-balancer]] — CP 头尾配对、局部因果顺序与负载均衡边界
 - [[per-document-head-tail-load-balancer]] — 多文档打包场景的变体，rank-major 布局是修出来的
-- [[ptrr-load-balancer]] — 从 BlockMask 测量实际负载再贪心调度，唯一能处理非因果掩码的
+- [[ptrr-load-balancer]] — 按 BlockMask 块数估算工作量并蛇形调度，适用于 flex_attention
 
 ## Concepts
 
@@ -33,7 +33,7 @@
 - [[python-advanced-mechanisms-for-pytorch]] — 装饰器、context、hook/override 协议及 Python 跨入 C/C++ 扩展的完整路径
 - [[pipeline-parallel]] — 按层切分模型，用 micro-batch 和 1F1B/Interleaved 调度把大模型流水化
 - [[deepseek-v4-architecture-and-execution]] — DeepSeek-V4 的 mHC、混合注意力、MoE、cache 与 PP/TP/CP/EP 执行流程
-- [[pip-requirements-file-format]] — pip requirements 每行语法、选项作用域、文件拆分、环境变量及常见坑速查
+- [[pip-requirements-file-format]] — requirements 语法、依赖来源与 pip 26.2.1 解析实例
 - [[deep-learning-training-numerics]] — 反向传播、fp16/bf16、AMP、loss scaling 和参数/梯度/优化器/激活显存账本
 - [[floating-point-error-analysis]] — 非结合律、误差累积、条件数、稳定算法，以及 rtol/atol 何时失效、如何组合
 - [[dtensor-placement]] — Shard/Replicate/Partial 与集合通信的映射表，TP 和 CP 共同的底座
@@ -47,7 +47,7 @@
 
 - [[deepseek-v4-vs-mainstream-architectures]] — DeepSeek-V4 与 Dense、传统稀疏 MoE、DeepSeek-V3 的架构和工程代价对比
 - [[tp-vs-cp-sharding]] — 切参数 vs 切序列；为什么只有 CP 需要负载均衡
-- [[colwise-vs-rowwise-parallel]] — 必须配对使用，三处不对称容易踩坑
+- [[colwise-vs-rowwise-parallel]] — 输入输出布局、组合条件及三处不对称
 - [[cp-load-balancers]] — 三种 CP 均衡策略怎么选，整除条件的严格程度差很多
 - [[allgather-vs-alltoall-kv-rotation]] — 用显存换通信次数，默认 allgather
 

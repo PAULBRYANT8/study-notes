@@ -2,7 +2,7 @@
 title: PrepareModuleInput / Output / InputOutput
 type: entity
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-11-06
 tags: [pytorch, tensor-parallel, 布局, hook]
 sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
@@ -46,7 +46,7 @@ PrepareModuleInput(
 
 ## 值得注意的点
 
-**`input_layouts` 是断言，不是转换。** 走的是 `DTensor.from_local(..., run_check=False)`——只贴标签，不校验实际数据是否真的那样分布。声明错了不会报错，只会算错。真正产生通信的是 `input_layouts != desired_layout` 时的 `redistribute`。
+**`input_layouts` 是断言，不是转换。** 走的是 `DTensor.from_local(..., run_check=False)`——只贴标签，不校验实际数据是否真的那样分布。声明错了不保证会在声明处被发现，可能造成错误结果或后续异常。真正产生通信的是 `input_layouts != desired_layout` 时的 `redistribute`。
 
 **已经是 DTensor 的输入不校验布局。** 源码里那行断言被注释掉了：
 
@@ -65,3 +65,9 @@ if isinstance(input, DTensor):
 
 - 上层机制：[[tp-module-sharding]]
 - 布局与通信的对应：[[dtensor-placement]]
+
+## 布局标注错误的后果
+
+以两 rank、逻辑输入序列长度 8 为例：若普通本地 Tensor 实际在每个 rank 都保存完整的 8 个位置，却被声明为沿序列维 `Shard`，下游会按分片语义解释它，可能得到与预期不同的全局形状或重分布结果。应先核对张量来源、各 rank 的本地形状及预期全局形状，再填写输入布局。
+
+这是一种布局声明风险，不保证一定在标注处报错，也不保证所有错误组合都静默运行。[[2026-07-26-pytorch-tp-source]] 仅列出相关类和代码位置；具体 hook 校验与行为应以对应提交完整实现及测试为准。

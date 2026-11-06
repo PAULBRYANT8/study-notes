@@ -2,7 +2,7 @@
 title: CP 三种负载均衡策略对比
 type: comparison
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-11-06
 tags: [pytorch, context-parallel, 负载均衡]
 sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
@@ -15,7 +15,7 @@ sources: ["[[2026-07-25-pytorch-cp-source]]"]
 
 | | HeadTail | PerDocumentHeadTail | PTRR |
 |---|---|---|---|
-| 原理 | 解析式：头尾对称配对 | 解析式：每文档内配对 | 测量式：读 BlockMask 算负载后调度 |
+| 原理 | 解析式：头尾对称配对 | 解析式：每文档内配对 | 估算式：按 BlockMask 块数估算工作量后调度 |
 | 适用掩码 | 单文档因果 | 文档块对角因果 | 任意 |
 | 后端 | SDPA + flex | SDPA + flex | **仅 flex_attention** |
 | 粒度 | token（`seq/(2·ws)`） | token（每文档独立） | 块（默认 128 token） |
@@ -39,3 +39,9 @@ sources: ["[[2026-07-25-pytorch-cp-source]]"]
 **只有 HeadTail 会静默退化。** `_create_default_load_balancer` 在整除条件不满足时返回 `None`，不报错不警告，训练照常跑，只是 rank 之间失衡。另外两个是显式构造的，构造时就会抛。
 
 **PTRR 的调度是贪心近似。** 前两者在标准因果掩码下是精确均衡（每 rank 1 的个数完全相等），PTRR 只做到接近。掩码越不规则差距越明显。
+
+## 区分默认工厂、显式均衡器与后端要求
+
+原始摘录的 HeadTail 索引生成片段在长度不能被 `2 * world_size` 整除时抛出 `AssertionError`；本笔记所述默认工厂则先判断条件，失败时返回 `None`。因此，“静默退化”应限定于所述默认工厂路径，不能推广为显式构造或调用 HeadTail 也会自动退化；摘录不足以确认检查发生在构造还是索引生成阶段。
+
+**边界示例**：长度 8、两 rank 满足 HeadTail 的整除条件；若所选路径还使用 [[cp-sequence-sharding]] 所述的 BlockMask 约束、块大小为 128，则 $8$ 不能被 $2\times128$ 整除。通过均衡器检查，不代表整条后端和掩码路径都可用；该 BlockMask 约束来自已有总结，完整实现需针对对应提交核对。

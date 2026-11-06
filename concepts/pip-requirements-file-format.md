@@ -2,7 +2,7 @@
 title: pip requirements 文件格式
 type: concept
 created: 2026-08-13
-updated: 2026-08-13
+updated: 2026-11-06
 tags: [pip, python, requirements-file, 依赖管理, 包管理]
 sources:
   - https://pip.pypa.io/en/stable/reference/requirements-file-format/
@@ -186,6 +186,21 @@ demo-package @ https://packages.example.invalid/files/demo_package-1.0-py3-none-
 - [ ] 按 base、dev、test 等用途拆分文件时，保持引用关系简单并实际测试组合结果；拆分不是格式要求。
 - [ ] 相对路径统一从项目根目录验证，CI 显式固定工作目录。
 - [ ] 敏感值由 CI secret 或宿主环境注入，不把真实凭据写入 requirements；同时留意命令输出、错误信息和代理日志可能暴露展开后的 URL。
+
+## 7. 固定版本下的两个解析例子
+
+以下是针对 pip 26.2.1 的隔离环境验证，使用的是该版本内部的 requirements 预处理和解析函数；内部接口不是稳定公共 API。例子没有访问网络或实际安装项目。
+
+**注释行末尾的反斜杠**：对下面两行，26.2.1 的预处理结果仍包含独立的安装项 `requests`；不能仅从“先处理续行，再剥离注释”推断注释行必然吞掉下一行。
+
+```text
+# note \
+requests
+```
+
+相对地，非注释需求行末尾未转义的反斜杠会连接下一行：`requests>=2,` 后接反斜杠、下一行写 `<3  # suffix`，预处理后的需求是 `requests>=2,<3`。解析细节可能随版本变化；一般格式规则见 [[2026-08-12-pip-requirements-file-format]]。
+
+**editable VCS 引号**：对本笔记中 `-e "project @ git+https://github.com/example/project.git"` 这一 requirements 文件行，pip 26.2.1 的解析器识别出项目名 `project` 并标记为 editable；去掉整段 direct URL 的引号后，同一版本报无效 editable requirement。这里仅验证了解析与 requirement 对象创建，没有克隆仓库或验证实际安装。版本和调用入口不同，结果应另行测试。
 
 ## 相关笔记
 

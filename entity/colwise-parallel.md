@@ -2,7 +2,7 @@
 title: ColwiseParallel
 type: entity
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-11-06
 tags: [pytorch, tensor-parallel, linear, embedding]
 sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
@@ -52,3 +52,9 @@ docstring 里专门提醒：输出默认分片，如果下游算子对形状敏�
 
 - 配对使用：[[rowwise-parallel]]，对比见 [[colwise-vs-rowwise-parallel]]
 - 上层机制：[[tp-module-sharding]]
+
+## 形状与冻结参数检查
+
+以线性层权重存储形状为 `[8,4]`、两个 rank 均匀切分为例，`Shard(0)` 后每个 rank 的权重为 `[4,4]`，各自产生 4 个输出通道。输入若是 `[B,S,4]`，本地输出就是 `[B,S,4]`；这是按摘录中权重切分规则作出的形状推导，不是源码中的测试数据。
+
+[[2026-07-26-pytorch-tp-source]] 的 `style.py:121-143` 片段以原参数的 `requires_grad` 创建分布式参数，说明该参数替换保留原有冻结标记。是否需要额外重分布取决于上下游实际布局；不能仅由权重切分断言所有连接都没有通信。

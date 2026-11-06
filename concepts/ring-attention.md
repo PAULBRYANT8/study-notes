@@ -2,7 +2,7 @@
 title: Ring Attention（PyTorch CP 实现）
 type: concept
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-11-06
 tags: [pytorch, context-parallel, attention, sdpa]
 sources: ["[[2026-07-25-pytorch-cp-source]]"]
 ---
@@ -74,6 +74,12 @@ else:
 ## Softmax 合并
 
 `_SDPAMerger` 做的是标准的在线 softmax 合并：每步拿到局部 `out` 和 `logsumexp`，按 logsumexp 加权累积。`_cp_options.convert_to_f32` 控制是否升到 fp32 累加，默认 True。
+
+## 区分跳过计算和选择子块
+
+`SKIP` 是 `_is_causal_behavior` 给某轮的计算分类；是否能省略对应通信，还要看完整循环的发起和转发顺序，不能由分类函数单独推断。四 rank、无均衡、标准因果时，rank 0 在非首轮看到的来源依次为 3、2、1，按摘录的条件均可跳过 attention；这不构成那些通信操作已经被消除的证据。
+
+**按本笔记的半块分支推导**：长度 8、两 rank，HeadTail 下 rank 0 的 Q 为 `[0,1,6,7]`，rank 1 的 KV 为 `[2,3,4,5]`。第 1 轮 rank 0 只计算 Q 尾半 `[6,7]` 对远端全部 KV 的 $2\times4$ 子问题；rank 1 只用远端 KV 头半 `[0,1]`，对本地全部 Q 算 $4\times2$。选出的子问题可不再使用因果三角掩码，不代表原始完整 Q 和 KV 块之间全部位置都可见。原始摘录直接展示分类函数；半块选择来自本笔记，仍需完整源码核对。
 
 ## 相关
 

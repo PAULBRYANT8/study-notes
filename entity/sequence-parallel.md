@@ -2,7 +2,7 @@
 title: SequenceParallel
 type: entity
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-11-06
 tags: [pytorch, tensor-parallel, layernorm, 显存]
 sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
@@ -15,9 +15,9 @@ sources: ["[[2026-07-26-pytorch-tp-source]]"]
 
 纯 TP 下，Linear 的 activation 是切开的，但 LayerNorm 前后需要 `Replicate`——于是每张卡都要存一份完整的 `(batch, seq, hidden)`。序列一长，这部分 activation 就成了显存大头，而且它是纯冗余的。
 
-SequenceParallel 把这些层的输入也按序列维切开。配合 [[rowwise-parallel]] 输出改成 `Shard(1)`（reduce_scatter 而非 allreduce），整条链路上再没有完整复制的 activation。
+SequenceParallel 让这些层可以处理按序列维分片的输入。与 [[rowwise-parallel]] 的 `Shard(1)` 输出衔接时，可减少这些层中完整复制的 activation；其他模块或后续布局转换是否仍需要完整副本，取决于具体链路。
 
-**通信量不增反减**：原本 allreduce 一次，现在 reduce_scatter + all_gather 各一次，两者加起来的数据量和一次 allreduce 相同（allreduce 本身就是这两步实现的）。省下的是显存。
+**通信与显存的权衡**：在常见环形集合通信模型和合适的布局衔接下，一次 all-reduce 可与 reduce-scatter 加 all-gather 作理论字节量比较，序列分片可减少部分层的复制激活。实际通信算法、额外布局转换和重叠情况不同，不能据此保证总通信量或耗时下降。
 
 ## 行为
 
@@ -64,3 +64,9 @@ replicated_param = torch.nn.Parameter(
 
 - 配合使用：[[rowwise-parallel]]（output_layouts 改 `Shard(1)`）、[[prepare-module-input-output]]
 - 上层机制：[[tp-module-sharding]]
+
+## 复制布局与复制操作
+
+[[2026-07-26-pytorch-tp-source]] 中 `style.py:389-398` 使用 `DTensor.from_local(..., [Replicate()], run_check=False)` 包装已有本地参数；该片段本身没有展示跨 rank 同步。因此，自定义初始化或加载各 rank 不一致的检查点时，应先确保参数一致，再把它声明为复制布局。
+
+例如两个 rank 的 norm 权重分别为全 1 和全 2，即使都被标成 `Replicate()`，本地前向结果仍可能不同。摘录没有证明这一错误必然被检测或必然静默；验证时应比较 rank 间参数和输出。

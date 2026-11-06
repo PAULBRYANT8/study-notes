@@ -2,7 +2,7 @@
 title: loss_parallel
 type: entity
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-11-06
 tags: [pytorch, tensor-parallel, 损失函数, 显存]
 sources: ["[[2026-07-26-pytorch-tp-source]]"]
 ---
@@ -15,7 +15,7 @@ sources: ["[[2026-07-26-pytorch-tp-source]]"]
 
 LLM 的输出层是 `(batch, seq, vocab)`，vocab 通常几万到几十万。这个张量往往是整个前向里最大的一个。TP 下它天然按 vocab 维分片（输出层用 [[colwise-parallel]]），但标准的 `cross_entropy` 需要完整 logits——一次 all_gather 就把刚省下的显存又吐回去了。
 
-loss_parallel 重写了 cross entropy 的分布式实现：softmax 的分母只需要各分片 max 和 sum 的 allreduce（两个标量级别的量），完全不用聚合 logits 本身。
+loss_parallel 可在词表分片上计算 cross entropy，而不必先聚合完整 logits。稳定 softmax 的最大值与指数和是按待分类位置计算的统计量，并非整个 batch 各一个标量；具体通信和目标类别项的处理应查看对应版本实现。
 
 ## 用法
 
@@ -54,3 +54,9 @@ N-D mesh 现在是支持的：切 class 维的那个 mesh 维被当作 "TP" 维�
 
 - 上游：[[colwise-parallel]]（输出层按 vocab 切）
 - 概念：[[tensor-parallel]]
+
+## 每个 token 一组归一化统计
+
+对于 $T$ 个待分类位置、词表大小 $V$，可以把 logits 展平为 `[T,V]`，沿词表分片。数学上稳定 softmax 的最大值和指数和都是**每个位置各一份**：两类统计量的形状分别是 `[T]`，而不是整个批次只有两个标量。相比完整 `[T,V]` logits 它们更小，但具体还需处理目标类别项；通信调用次数和实现细节不能仅凭当前源码摘录确定。
+
+PyTorch cross entropy 对多维输入通常将第 1 维视为 class 维。若模型输出是 `[B,S,V]`，应根据接口要求展平为 `[B*S,V]`（target 为 `[B*S]`）或调整为 `[B,V,S]`（target 为 `[B,S]`）；同时检查实际 DTensor placement。输入维度和可用功能以当前版本文档及测试为准。

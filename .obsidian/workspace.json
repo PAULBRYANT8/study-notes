@@ -55,12 +55,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "concepts/linux-essential-commands.md",
-                "mode": "preview",
+                "file": "work/isp/HIRISCV-WFI异常处理旁路与寄存器堆.md",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "linux-essential-commands"
+              "title": "HIRISCV-WFI异常处理旁路与寄存器堆"
             }
           }
         ],
@@ -242,12 +242,12 @@
   },
   "active": "7e0d5edf54c2c896",
   "lastOpenFiles": [
+    "concepts/linux-essential-commands.md",
     "work/isp/HIRISCV-WFI异常处理旁路与寄存器堆.md",
     "log.md",
     "concepts/deepseek-v4-architecture-and-execution.md",
     "entity/head-tail-load-balancer.md",
     "AGENTS.md",
-    "concepts/linux-essential-commands.md",
     "concepts/linux-debugging-for-npu-adaptation.md",
     "entity/prepare-module-input-output.md",
     "entity/ptrr-load-balancer.md",

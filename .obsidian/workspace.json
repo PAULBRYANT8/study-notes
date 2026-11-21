@@ -55,12 +55,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "work/isp/HIRISCV-WFI异常处理旁路与寄存器堆.md",
+                "file": "concepts/linux-essential-commands.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "HIRISCV-WFI异常处理旁路与寄存器堆"
+              "title": "linux-essential-commands"
             }
           }
         ],
@@ -123,7 +123,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 401.109375
   },
   "right": {
     "id": "e995bd9c64e4aa41",
@@ -242,9 +242,26 @@
   },
   "active": "7e0d5edf54c2c896",
   "lastOpenFiles": [
-    "concepts/linux-essential-commands.md",
-    "work/isp/HIRISCV-WFI异常处理旁路与寄存器堆.md",
+    "work/example/cmake-build-vs-run/build/Debug/outDebug",
+    "work/example/cmake-build-vs-run/build/Debug/main.o",
+    "work/example/cmake-build-vs-run/build/Debug",
+    "work/example/cmake-build-vs-run/build/app-direct",
+    "work/example/cmake-build-vs-run/build",
+    "work/example/cmake-build-vs-run/readme.md",
+    "work/example/cmake-build-vs-run/math_utils.h",
+    "work/example/cmake-build-vs-run/math_utils.c",
+    "work/example/cmake-build-vs-run/main.c",
+    "work/example/cmake-build-vs-run/CMakeLists.txt",
+    "work/example/cmake-build-vs-run",
+    "work/example",
+    "work/isp/Makefile常用语法与Kbuild笔记.md",
     "log.md",
+    "work/isp/HIRISCV-WFI异常处理旁路与寄存器堆.md",
+    "work/training&inference/2026-09-22-compressor-cp-design.md",
+    "work/isp/Verilog零基础入门与菜鸟教程知识梳理.md",
+    "concepts/linux-essential-commands.md",
+    "concepts/hdl-arithmetic-synthesis.md",
+    "raw/2026-11-19-xapp215-hdl-arithmetic.md",
     "concepts/deepseek-v4-architecture-and-execution.md",
     "entity/head-tail-load-balancer.md",
     "AGENTS.md",
@@ -260,16 +277,6 @@
     "work/training&inference/PyTorch编译问题总结：Dynamo、Inductor与NPU Codegen.md",
     "work/training&inference/TorchTitan-NPU-动态量化与模型配置树梳理.md",
     "work/training&inference/SwigluGroup-融合算子接入介绍.md",
-    "work/training&inference/swiglu-group-接入复盘.md",
-    "work/training&inference/量化基础与DeepSeek-V4-MX权重加载-PR813.md",
-    "work/training&inference/inplace-partial-rotary-mul-接入复盘.md",
-    "concepts/deep-learning-training-numerics.md",
-    "未命名.md",
-    "未命名.base",
-    "work/training&inference/简历四项项目-上下游知识体系与学习路线.md",
-    "work/training&inference/2026-09-22-compressor-cp-design.md",
-    "work/training&inference/tp_mtp_compile_async_collective_tensor.md",
-    "raw/2026-07-30-deepseekmoe.html",
-    "raw/2026-07-30-deepseekmoe.pdf"
+    "work/training&inference/swiglu-group-接入复盘.md"
   ]
 }

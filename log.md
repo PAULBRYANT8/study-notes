@@ -34,3 +34,5 @@
 - 2026-11-06 根据 DeepTutor 和 TP 源码摘录补充布局、loss 及通信条件，并修正过度概括 —— [[colwise-parallel]]、[[rowwise-parallel]]、[[loss-parallel]]、[[sequence-parallel]]、[[micro-pipeline-tp]]、[[prepare-module-input-output]]、[[index]]、[[log]]
 - 2026-11-06 根据 DeepTutor 和 TP/CP 摘录补充分片、布局转换及负载分析，修正通信与适用范围 —— [[dtensor-placement]]、[[tensor-parallel]]、[[tp-module-sharding]]、[[colwise-vs-rowwise-parallel]]、[[tp-vs-cp-sharding]]、[[how-does-pytorch-tp-shard-modules]]、[[index]]、[[log]]
 - 2026-11-06 结合 DeepTutor 和 pip 26.2.1 隔离解析验证，补充续行、注释与 editable VCS 示例 —— [[pip-requirements-file-format]]、[[index]]、[[log]]
+
+- 2026-11-19 归档 XAPP215 原始 PDF，整理 HDL 算术与 FPGA 综合并回链 Verilog 基础 —— [[2026-11-19-xapp215-hdl-arithmetic]]、[[hdl-arithmetic-synthesis]]、[[Verilog零基础入门与菜鸟教程知识梳理]]、[[index]]、[[log]]

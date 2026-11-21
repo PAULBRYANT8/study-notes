@@ -251,3 +251,15 @@ rm -i demo-renamed.txt
 - 程序崩溃、卡住或运行缓慢：继续阅读 [[linux-debugging-for-npu-adaptation]]。
 
 常见问题优先查看本机 `man <命令>`；手册缺失时可查 [GNU Coreutils](https://www.gnu.org/software/coreutils/manual/)、[Bash 手册](https://www.gnu.org/software/bash/manual/bash.html)、[GNU Findutils](https://www.gnu.org/software/findutils/manual/html_mono/find.html) 和 [OpenSSH 手册](https://man.openbsd.org/ssh)。
+
+
+# 12. 补充
+
+## （1）查看文件大小
+```bash
+du -sh */    #查看当前目录下各个文件夹的大小
+du -sh */ | sort -h    #按照文件夹从小到大排序
+du -h --max-depth=1 . | sort -g    #查看当前目录下所有目录的大小
+du -sh .    #查看当前目录总大小
+du -sh */ | sort -rh    #按照文件夹从大到小排序
+```

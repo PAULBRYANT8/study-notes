@@ -26,6 +26,8 @@
 
 ## Concepts
 
+- [[hdl-arithmetic-synthesis]] — HDL 算术位宽、有符号数与 FPGA 综合，解读 XAPP215 的适用边界
+
 - [[linux-essential-commands]] — 从终端、文件与日志到进程、远程连接和日常工作练习的 Linux 入门
 - [[java-programming-in-ai-era]] — AI 编程时代的 Java 必备知识、场景选型、工程底座与学习路线
 - [[linux-debugging-for-npu-adaptation]] — 用 gdb/core、pdb、strace、perf 和 dmesg 按层定位训练崩溃、hang 与 host 性能问题
@@ -60,6 +62,8 @@
 - [[queries/ai-infra-capabilities/dp-fsdp-zero-ep-parallelism]] — DP、FSDP、ZeRO、EP 与 TP/CP 的统一并行维度对比
 
 ## Raw
+
+- [[2026-11-19-xapp215-hdl-arithmetic]] — Xilinx XAPP215 原始 PDF 与来源信息
 
 - [[2026-08-12-pip-requirements-file-format]] — pip Requirements File Format v26.2.1 官方页面事实摘录
 - [[2026-07-30-deepseekmoe]] — DeepSeekMoE arXiv v1 PDF、摘要页面快照与书目信息
